@@ -1,0 +1,126 @@
+#!/bin/bash
+
+######
+
+
+######
+
+# Verifica se o arquivo /userdata/system/.dev/contador.txt existe
+if [ -f /userdata/system/.dev/contador.txt ]; then
+    # Lê o valor atual de count.txt
+    count=$(cat /userdata/system/.dev/contador.txt)
+    
+    # Verifica se o valor de count.txt é menor ou igual a 0
+    if [ "$count" -le 0 ]; then
+        echo "O valor de count.txt é menor ou igual a zero. O jogo não será iniciado."
+        exit 0  # Encerra o script se o valor for menor ou igual a zero
+    fi
+    
+    # Se o valor for maior que zero, decrementa 1 e atualiza o arquivo
+    count=$(($count - 1))
+    echo "$count" > /userdata/system/.dev/contador.txt
+    echo "Novo valor de count.txt: $count"
+
+    # Caminho para o arquivo coin.py > one
+    CAMINHO_COIN="/usr/bin/one"
+
+    # Captura o valor de TEMPO_JOGO (em minutos) e converte para segundos
+    TEMPO_JOGO_MINUTOS=$(grep -oP 'TEMPO_JOGO_MINUTOS\s*=\s*\K\d+' "$CAMINHO_COIN")
+    TEMPO_JOGO_SEGUNDOS=$((TEMPO_JOGO_MINUTOS * 60))
+
+    # Exibe o valor de TEMPO_JOGO em segundos
+    echo "Valor de TEMPO_JOGO em minutos: $TEMPO_JOGO_MINUTOS"
+    echo "Valor de TEMPO_JOGO em segundos: $TEMPO_JOGO_SEGUNDOS"
+
+    # Salva o valor de TEMPO_JOGO no arquivo tempo_jogo.txt
+    echo "$TEMPO_JOGO_SEGUNDOS" > /userdata/system/.dev/tempo_jogo.txt
+else
+    echo "Arquivo /userdata/system/.dev/contador.txt não encontrado!"
+    exit 1  # Encerra o script se o arquivo não for encontrado
+fi
+
+# Inicia o jogo (exemplo de comando, ajuste conforme necessário)
+echo "Iniciando o jogo..."
+/usr/lib/python3.11/site-packages/configgen/emulatorlauncher.py "$@" &  # Supondo que este seja o comando para iniciar o jogo
+game_pid=$!  # Guarda o PID do jogo
+
+# Inicia o overlay.py para sobreposição
+echo "Iniciando o overlay..."
+python3.14 /usr/bin/two &  # Roda o script two.py em segundo plano
+overlay_pid=$!  # Guarda o PID do script de overlay
+
+####################################################################
+# Função para decrementar o tempo no arquivo tempo_jogo.txt
+decrementa_tempo_jogo() {
+    # Caminho padrão do arquivo, a menos que seja passado como argumento
+    local file_path="${1:-/userdata/system/.dev/tempo_jogo.txt}"
+    local tempo_atual=0
+
+    # Espera 2,5 segundos antes de começar a contagem
+    echo "Aguardando 2,5 segundos antes de começar a contagem do tempo..."
+    sleep 2.5  # Aguardar 2,5 segundos antes de iniciar o decremento
+
+    # Exibe o contador após os 2,5 segundos
+    echo "Contador iniciado..."
+    
+    # Loop infinito
+    while true; do
+        # Verifica se o arquivo existe
+        if [ ! -f "$file_path" ]; then
+            echo "Arquivo não encontrado: $file_path"
+            return 1
+        fi
+
+        # Lê o valor do arquivo
+        tempo_atual=$(cat "$file_path")
+
+        # Verifica se é um número válido
+        if ! [[ "$tempo_atual" =~ ^[0-9]+$ ]]; then
+            echo "Valor inválido no arquivo: $tempo_atual"
+            return 1
+        fi
+
+        # Se for maior que zero, decrementa
+        if [ "$tempo_atual" -gt 0 ]; then
+            tempo_atual=$((tempo_atual - 1))
+            echo "$tempo_atual" > "$file_path"
+            echo "Tempo atual: $tempo_atual"
+        else
+            echo "O tempo chegou a zero. Encerrando o contador, RetroArch e o overlay.py."
+            # Aqui você encerra o RetroArch ou outro emulador dependendo do processo
+            kill_emulador
+
+            # Exclui o arquivo tempo_jogo.txt
+            rm -f "$file_path"  # Remove o arquivo tempo_jogo.txt
+            echo "Arquivo $file_path excluído."
+            break  # Sai do loop e encerra a execução do contador
+        fi
+
+        sleep 1  # Espera 1 segundo
+    done
+}
+sleep 1.5
+
+# Função para matar o emulador (RetroArch ou outro)
+kill_emulador() {
+    xdotool key alt+F4
+    xdotool key alt+F4
+
+
+}
+
+####################################################################
+
+# Executa a função de decremento em segundo plano
+decrementa_tempo_jogo &
+
+# Espera o término do contador
+wait
+sleep 2.5
+mv /userdata/system/.dev/contador.txt.bkp /userdata/system/.dev/contador.txt
+
+
+
+# Finaliza o script
+echo "O tempo acabou. O jogo foi fechado e o overlay foi encerrado."
+exit 0

@@ -1,0 +1,132 @@
+#!/usr/bin/python3.14
+import customtkinter as ctk
+import os
+import time
+import threading
+
+CAMINHO_TEMPO = "/userdata/system/.dev/tempo_jogo.txt"
+CAMINHO_COIN = "/userdata/system/.dev/coin"  # Arquivo que controla visibilidade extra
+CAMINHO_COUNT = "/userdata/system/.dev/contador.txt"  # Contador de créditos
+
+def ler_tempo():
+    """Lê o número do arquivo count.txt. Retorna -1 se o arquivo não existir ou se houver erro."""
+    try:
+        if not os.path.exists(CAMINHO_COUNT):
+            return -2
+        with open(CAMINHO_COUNT, "r") as f:
+            return int(f.read().strip())
+    except (IOError, ValueError):
+        return -1
+
+def verificar_arquivo():
+    """Verifica se tempo_jogo.txt ou coin existem, e exibe/oculta a janela."""
+    if os.path.exists(CAMINHO_TEMPO) or os.path.exists(CAMINHO_COIN):
+        if janela.winfo_ismapped():
+            janela.withdraw()
+    else:
+        if not janela.winfo_ismapped():
+            janela.deiconify()
+
+def atualizar():
+    """Atualiza o contador na janela e ajusta o tamanho da janela se necessário."""
+    valor = ler_tempo()
+
+    # Aumenta a largura da janela se o valor de créditos for maior que 9
+    largura_base = 300
+    if valor > 9:
+        largura_janela = largura_base + 50
+    else:
+        largura_janela = largura_base
+
+    # Ajusta a geometria da janela
+    janela.geometry(f"{largura_janela}x{altura_janela}+{pos_x}+{pos_y}")
+
+    if valor == -2:
+        janela.withdraw()  # Retira a janela quando não há contador
+        return
+
+    if valor >= 0:
+        label.configure(text=f"CRÉDITOS: {valor}")
+        janela.update_idletasks()
+
+        if valor <= 5:
+            label.configure(text_color="orange")
+        else:
+            label.configure(text_color="green")
+    else:
+        label.configure(text="Contagem encerrada!")
+        janela.update()
+        time.sleep(1)
+        os.system("pkill retroarch")
+        janela.withdraw()
+        return
+
+    janela.after(1000, atualizar)  # Atualiza a cada 1 segundo
+
+def encerrar_janela(event=None):
+    """Função para fechar a janela ao pressionar a tecla correta."""
+    if event and (event.char == '*' or event.char == 'q'):
+        janela.destroy()
+
+# Cria a janela
+janela = ctk.CTk()
+
+# Remove a barra de título e as bordas
+janela.overrideredirect(True)
+
+# Define a janela como sempre no topo
+janela.attributes("-topmost", True)
+
+# Define o fundo e a transparência
+janela.configure(fg_color="black")
+janela.attributes("-alpha", 0.9)
+
+# Define a cor da borda (azul neon) e a largura
+janela.configure(border_color="#00FFFF", border_width=2)
+
+# Define tamanho da janela
+largura_janela = 300
+altura_janela = 60
+
+# Obtém a resolução da tela
+largura_tela = janela.winfo_screenwidth()
+altura_tela = janela.winfo_screenheight()
+
+# Ajuste para mover a janela mais para a esquerda (reduzindo o valor de pos_x)
+pos_x = largura_tela - largura_janela - 100
+pos_y = altura_tela - altura_janela - 40
+
+# Aplica a geometria
+janela.geometry(f"{largura_janela}x{altura_janela}+{pos_x}+{pos_y}")
+
+# Cria o label
+label = ctk.CTkLabel(
+    janela,
+    text="",
+    font=("Arial", 40, "bold"),
+    text_color="green",
+    fg_color="transparent"
+)
+label.place(relx=0.5, rely=0.5, anchor=ctk.CENTER)
+
+# Vínculo do evento de teclado
+janela.bind("<Key>", encerrar_janela)
+
+# Verifica se deve mostrar a janela inicialmente
+verificar_arquivo()
+
+# Inicia a atualização do contador
+atualizar()
+
+# Loop contínuo para verificação de existência dos arquivos
+def loop_verificacao():
+    while True:
+        verificar_arquivo()
+        time.sleep(0.1)
+
+# Roda o loop em uma thread separada
+thread = threading.Thread(target=loop_verificacao, daemon=True)
+thread.start()
+
+# Inicia a janela
+janela.mainloop()

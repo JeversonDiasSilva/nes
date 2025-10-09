@@ -1,0 +1,36 @@
+#!/bin/bash
+
+
+was_pcmanfm_running=0
+was_retroarch_running=0
+
+while true; do
+    # Verifica se a janela pcmanfm.Pcmanfm está aberta
+    if wmctrl -lx | grep -i '^.*pcmanfm\.Pcmanfm' > /dev/null; then
+        if [ "$was_pcmanfm_running" -eq 0 ]; then
+            echo "Janela pcmanfm aberta. Criando arquivo."
+            echo "" > /userdata/system/.dev/tempo_jogo.txt
+            was_pcmanfm_running=1
+        fi
+    else
+        if [ "$was_pcmanfm_running" -eq 1 ]; then
+            echo "Janela pcmanfm fechada. Removendo arquivo."
+            rm -f /userdata/system/.dev/tempo_jogo.txt
+            was_pcmanfm_running=0
+        fi
+    fi
+
+    # Verifica se a janela do RetroArch está aberta
+    if wmctrl -lx | grep -i '^.*retroarch\.Retroarch' > /dev/null; then
+        was_retroarch_running=1
+    else
+        if [ "$was_retroarch_running" -eq 1 ]; then
+            echo "RetroArch foi fechado. Removendo arquivo /userdata/system/.dev/coin."
+            rm -f /userdata/system/.dev/coin
+            rm -f /userdata/system/.dev/tempo_jogo.txt
+            was_retroarch_running=0
+        fi
+    fi
+
+    sleep 1
+done

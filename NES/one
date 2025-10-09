@@ -1,0 +1,195 @@
+#!/usr/bin/env python3
+import os
+import time
+import xml.etree.ElementTree as ET
+import pygame
+import subprocess
+
+# --- Caminhos Configuráveis ---
+BASE_DIR = '/userdata/system/.dev'
+SOM_COIN = os.path.join(BASE_DIR, 'efeitos_sonoros/coins.mp3')
+ARQ_COUNT = os.path.join(BASE_DIR, 'contador.txt')
+ARQ_CONTADOR = os.path.join(BASE_DIR, '.contador.txt')
+ARQ_TEMPO = os.path.join(BASE_DIR, 'tempo_jogo.txt')
+ES_INPUT_CFG = os.path.join(BASE_DIR, 'es_input.cfg')
+ARQ_COIN = os.path.join(BASE_DIR, 'coin')
+
+TEMPO_JOGO_MINUTOS = 5
+
+# --- Funções Auxiliares ---
+def tocar_som(path):
+    try:
+        subprocess.Popen(['mpv', '--no-video', '--really-quiet', path],
+                         stdout=subprocess.DEVNULL,
+                         stderr=subprocess.DEVNULL)
+    except Exception as e:
+        print(f"[ERRO] Falha ao tocar som: {e}")
+
+def ler_arquivo(caminho, padrao=0):
+    if not os.path.exists(caminho):
+        return padrao
+    try:
+        with open(caminho, 'r') as f:
+            return int(f.read().strip())
+    except:
+        return padrao
+
+def escrever_arquivo(caminho, valor):
+    try:
+        with open(caminho, 'w') as f:
+            f.write(str(valor))
+    except Exception as e:
+        print(f"[ERRO] Escrevendo em {caminho}: {e}")
+
+def incrementar_arquivo(caminho, quanto=1):
+    valor = ler_arquivo(caminho)
+    escrever_arquivo(caminho, valor + quanto)
+
+def decrementar_arquivo(caminho, quanto=1):
+    valor = ler_arquivo(caminho)
+    novo_valor = max(0, valor - quanto)
+    escrever_arquivo(caminho, novo_valor)
+
+def exibir_status():
+    count = ler_arquivo(ARQ_COUNT)
+    contador = ler_arquivo(ARQ_CONTADOR)
+    tempo = ler_arquivo(ARQ_TEMPO)
+    print(f"📊 Créditos: {count} | Acumulado: {contador} | Tempo de jogo: {tempo}s")
+
+def carregar_ids():
+    select_ids = {}
+    r3_ids = {}
+    if not os.path.exists(ES_INPUT_CFG):
+        print(f"[ERRO] Arquivo '{ES_INPUT_CFG}' não encontrado. Usando padrão.")
+        select_ids['usb gamepad'] = 8
+        r3_ids['usb gamepad'] = 11
+        return select_ids, r3_ids
+
+    try:
+        tree = ET.parse(ES_INPUT_CFG)
+        root = tree.getroot()
+        for inputConfig in root.findall('inputConfig'):
+            name = inputConfig.attrib.get('deviceName', '').strip().lower()
+            for inp in inputConfig.findall('input'):
+                inp_name = inp.attrib.get('name').lower()
+                if inp_name == 'select':
+                    select_ids[name] = int(inp.attrib.get('id'))
+                elif inp_name == 'r3':
+                    r3_ids[name] = int(inp.attrib.get('id'))
+    except Exception as e:
+        print(f"[ERRO] Parsing XML: {e}")
+    return select_ids, r3_ids
+
+# --- Loop Principal ---
+def main():
+    pygame.init()
+    pygame.joystick.init()
+
+#    if not os.path.exists(ARQ_TEMPO):
+#        escrever_arquivo(ARQ_TEMPO, 0)
+
+    select_ids, r3_ids = carregar_ids()
+    joysticks_map = {}
+    last_joy_count = -1
+
+    while True:
+        num_joysticks = pygame.joystick.get_count()
+        if num_joysticks != last_joy_count:
+            joysticks_map.clear()
+            for i in range(num_joysticks):
+                js = pygame.joystick.Joystick(i)
+                js.init()
+                name = js.get_name().strip().lower()
+                select_id = select_ids.get(name)
+                r3_id = r3_ids.get(name)
+                if select_id is not None or r3_id is not None:
+                    joysticks_map[i] = {
+                        'obj': js,
+                        'name': name,
+                        'select_id': select_id,
+                        'r3_id': r3_id,
+                        'r3_press_time': None,
+                        'r3_executado': False
+                    }
+                    print(f"[INFO] Joystick detectado: {name}")
+                else:
+                    print(f"[AVISO] Joystick '{name}' não mapeado.")
+            last_joy_count = num_joysticks
+
+        for event in pygame.event.get():
+            if event.type == pygame.JOYBUTTONDOWN:
+                idx = event.joy
+                if idx in joysticks_map:
+                    js_data = joysticks_map[idx]
+                    if event.button == js_data['r3_id']:
+                        js_data['r3_press_time'] = time.time()
+                        js_data['r3_executado'] = False
+
+                    elif event.button == js_data['select_id']:
+                        if os.path.exists(ARQ_COIN):
+                            incrementar_arquivo(ARQ_CONTADOR)
+                            print("[SELECT] coin detectado: incrementado apenas .contador.txt sem som.")
+                        else:
+                            if os.path.exists(ARQ_TEMPO):
+                                print("[SELECT] Incrementando tempo.")
+                                incrementar_arquivo(ARQ_TEMPO, TEMPO_JOGO_MINUTOS * 60)
+                            else:
+                                print("[SELECT] Incrementando créditos.")
+                                incrementar_arquivo(ARQ_COUNT)
+                            incrementar_arquivo(ARQ_CONTADOR)
+                            tocar_som(SOM_COIN)
+                        exibir_status()
+
+            elif event.type == pygame.JOYBUTTONUP:
+                idx = event.joy
+                if idx in joysticks_map:
+                    js_data = joysticks_map[idx]
+                    if event.button == js_data['r3_id']:
+                        press_time = js_data.get('r3_press_time')
+                        if press_time and not js_data['r3_executado']:
+                            duracao = time.time() - press_time
+                            if duracao < 1.0:
+                                count = ler_arquivo(ARQ_COUNT)
+                                if count > 0:
+                                    if os.path.exists(ARQ_TEMPO):
+                                        decrementar_arquivo(ARQ_COUNT)
+                                        incrementar_arquivo(ARQ_TEMPO, TEMPO_JOGO_MINUTOS * 60)
+                                        tocar_som(SOM_COIN)
+                                        print(f"[R3] Créditos decrementados e +{TEMPO_JOGO_MINUTOS} minutos adicionados. Créditos restantes: {count - 1}")
+                                    elif os.path.exists(ARQ_COIN):
+                                        decrementar_arquivo(ARQ_COUNT)
+                                        print("[R3] tempo_jogo.txt não encontrado e coin existe, simulando tecla 62.")
+                                        subprocess.run(["xdotool", "keydown", "62"])
+                                        time.sleep(0.1)
+                                        subprocess.run(["xdotool", "keyup", "62"])
+                                    else:
+                                        print("[R3] tempo_jogo.txt e coin não encontrados, nada feito.")
+                                else:
+                                    print("[R3] Sem créditos disponíveis em contador.txt.")
+                            exibir_status()
+                        js_data['r3_press_time'] = None
+                        js_data['r3_executado'] = False
+
+        # Verificação contínua de pressão longa (sem soltar)
+        for js_data in joysticks_map.values():
+            r3_id = js_data['r3_id']
+            press_time = js_data['r3_press_time']
+            if r3_id is not None and press_time and not js_data['r3_executado']:
+                if js_data['obj'].get_button(r3_id):
+                    duracao = time.time() - press_time
+                    if duracao >= 1.0:
+                        print("[R3] Pressão longa detectada. Fechando com Alt+F4.")
+                        subprocess.run(["xdotool", "key", "Alt+F4"])
+                        js_data['r3_executado'] = True
+                        js_data['r3_press_time'] = None
+                        exibir_status()
+
+        time.sleep(0.01)
+
+if __name__ == "__main__":
+    try:
+        main()
+    except KeyboardInterrupt:
+        print("\n[SAÍDA] Encerrando...")
+    finally:
+        pygame.quit()

@@ -1,0 +1,26 @@
+#!/bin/bash
+# --- Configurações do tempo_jogo ---
+ARQ_TEMPO="/userdata/system/.dev/tempo_jogo.txt"
+SOM="/userdata/system/.dev/efeitos_sonoros/insert_coin.plataforma.mp3"
+TOCOU_SOM=0   # flag de controle
+
+# Função para monitorar o tempo de jogo e tocar som se necessário
+monitorar_tempo_jogo() {
+    if [ -f "$ARQ_TEMPO" ]; then
+        VALOR=$(cat "$ARQ_TEMPO" 2>/dev/null)
+        if [[ "$VALOR" =~ ^[0-9]+$ ]]; then
+            if [ "$VALOR" -le 59 ] && [ "$TOCOU_SOM" -eq 0 ]; then
+                mpv "$SOM" > /dev/null 2>&1 &
+                TOCOU_SOM=1
+            elif [ "$VALOR" -gt 59 ]; then
+                TOCOU_SOM=0
+            fi
+        fi
+    fi
+}
+
+# Loop principal
+while true; do
+    monitorar_tempo_jogo
+    sleep 0.5
+done

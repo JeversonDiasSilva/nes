@@ -1,0 +1,12 @@
+#!/bin/bash
+
+
+
+
+cp -f /userdata/system/configs/retroarch/retroarchcustom.cfg /userdata/system/configs/retroarch/retroarch.cfg
+sed -i 's/^input_driver *= *udev/input_driver = "x"/'  /userdata/system/configs/retroarch/retroarch.cfg
+# Criar /userdata/system/.dev/coin
+echo "" >> /userdata/system/.dev/coin
+# 
+retroarch -L /usr/lib/libretro/fbneo_libretro.so "$1"
+

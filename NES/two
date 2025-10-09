@@ -1,0 +1,84 @@
+#!/usr/bin/python3.14
+import customtkinter as ctk
+import os
+import time
+
+CAMINHO_TEMPO = "/userdata/system/.dev/tempo_jogo.txt"
+
+def ler_tempo():
+    """Lê os segundos restantes do arquivo tempo.txt.
+    Retorna -1 se o arquivo não existir ou se houver erro."""
+    try:
+        if not os.path.exists(CAMINHO_TEMPO):
+            return -2 # Usamos -2 para indicar que o arquivo foi apagado
+        with open(CAMINHO_TEMPO, "r") as f:
+            return int(f.read().strip())
+    except (IOError, ValueError):
+        return -1
+
+def formatar_tempo(segundos):
+    """Converte segundos em formato HH:MM:SS"""
+    horas = segundos // 3600
+    minutos = (segundos % 3600) // 60
+    segundos_restantes = segundos % 60
+    return f"{horas:02}:{minutos:02}:{segundos_restantes:02}"
+
+def atualizar():
+    """Atualiza o tempo restante na janela"""
+    segundos = ler_tempo()
+
+    # Verificação se o arquivo foi apagado
+    if segundos == -2:
+        janela.destroy()
+        return
+
+    # Lógica de atualização normal
+    if segundos >= 0:
+        tempo_formatado = formatar_tempo(segundos)
+        label.configure(text=f"TIMER: {tempo_formatado}")
+        janela.update_idletasks()
+        
+        # Lógica para mudar de cor
+        if segundos <= 59:
+            label.configure(text_color="orange")
+        else:
+            label.configure(text_color="green")
+    else:
+        label.configure(text="Tempo esgotado!")
+        janela.update()
+        time.sleep(2)
+        os.system("pkill retroarch")
+        janela.destroy()
+        return
+
+    janela.after(1000, atualizar)
+
+# Criar a janela
+janela = ctk.CTk()
+
+# Remove a barra de título e as bordas
+janela.overrideredirect(True)
+
+# Define a janela como sempre no topo
+janela.attributes("-topmost", True)
+
+# Define a posição da janela no canto superior esquerdo
+janela.geometry(f"+10+10")
+
+# Fundo transparente da janela
+janela.configure(fg_color="black")
+janela.attributes("-alpha", 0.9)
+
+# Cria o label que vai exibir o tempo
+label = ctk.CTkLabel(
+    janela,
+    text="",
+    font=("Arial", 36, "bold"),
+    text_color="green",
+    fg_color="transparent"
+)
+label.pack(padx=5, pady=5)
+
+# Inicia a atualização do tempo
+atualizar()
+janela.mainloop()
