@@ -1,0 +1,198 @@
+#!/bin/bash
+
+#######
+
+
+
+#####
+# Script para verificar o batocera.conf e gerar/atualizar o sudachi.txt.
+# Ele captura APENAS os jogos Switch que estão explicitamente configurados com "emulator=sudachi".
+#####
+
+# Caminhos dos arquivos
+batocera_conf_path="/userdata/system/batocera.conf"
+sudachi_txt_path="/userdata/roms/switch/sudachi.txt"
+
+# Remove o arquivo sudachi.txt existente para garantir uma lista limpa
+# É mais seguro remover e recriar do que tentar sobrescrever com ">",
+# especialmente se o script parar inesperadamente.
+if [ -f "$sudachi_txt_path" ]; then
+    rm "$sudachi_txt_path"
+    echo "Arquivo '$sudachi_txt_path' existente removido para recriação."
+fi
+
+# Verifica se o arquivo batocera.conf existe
+if [ ! -f "$batocera_conf_path" ]; then
+    echo "Erro: Arquivo '$batocera_conf_path' não encontrado!"
+    exit 1
+fi
+
+# Cria um array para armazenar os nomes dos jogos com emulador sudachi
+declare -a nomes_sudachi # Declara um array para clareza
+
+# Lê o batocera.conf linha por linha e extrai os nomes dos jogos
+# que têm o emulador setado para "sudachi".
+while IFS= read -r line; do
+    # Regex para capturar o nome do jogo:
+    # ^switch\[\"([^\"]+)\"\]\.emulator=sudachi
+    # Explicação:
+    # ^             : Início da linha
+    # switch\[\"    : Corresponde a "switch[\"" literalmente
+    # ([^\"]+)      : Grupo de captura (o nome do jogo) que corresponde a um ou mais
+    #                 caracteres que NÃO SÃO aspas duplas (")
+    # \"\]\.emulator=sudachi : Corresponde a "].emulator=sudachi" literalmente
+    if [[ "$line" =~ ^switch\[\"([^\"]+)\"\]\.emulator=sudachi ]]; then
+        # BASH_REMATCH[1] contém o texto capturado pelo primeiro grupo de parênteses na regex
+        jogo_capturado="${BASH_REMATCH[1]}"
+        # Adiciona o nome do jogo ao array
+        nomes_sudachi+=("$jogo_capturado")
+    fi
+done < "$batocera_conf_path"
+
+# Cria o arquivo sudachi.txt se ele não existir
+touch "$sudachi_txt_path"
+
+# Adiciona os nomes dos jogos do array ao arquivo sudachi.txt
+# O loop garante que cada nome seja adicionado em uma nova linha.
+for nome in "${nomes_sudachi[@]}"; do
+    # Verifica se o nome já está no arquivo sudachi.txt antes de adicionar
+    # -F: string fixa (não regex), -q: modo silencioso, -x: linha inteira exata
+    if ! grep -F -qx "$nome" "$sudachi_txt_path"; then
+        echo "$nome" >> "$sudachi_txt_path"
+        echo "Adicionado: '$nome' à lista em '$sudachi_txt_path'."
+    else
+        echo "Já existe: '$nome' na lista em '$sudachi_txt_path'."
+    fi
+done
+
+
+
+#######
+
+
+
+
+
+
+#####
+# Script para iniciar o emulador Sudachi no Batocera, usando o método de execução original.
+# Garante que o jogo seja encontrado e que a verificação da lista seja precisa.
+#####
+
+# Define o diretório base do Sudachi. Este é o local onde o executável 'sudachi' e suas
+# bibliotecas e plugins 'extra/' estão localizados.
+SUDACHI_BASE_DIR="/userdata/system/switch"
+
+# Muda para o diretório base do Sudachi. Isso é essencial para que as referências
+# relativas dentro de 'extra/sudachi' e 'extra/lib' funcionem corretamente.
+# O '|| { ...; exit 1; }' garante que o script saia com erro se não conseguir mudar de diretório.
+cd "$SUDACHI_BASE_DIR" || { echo "Erro: Não foi possível mudar para o diretório do Sudachi: $SUDACHI_BASE_DIR"; exit 1; }
+
+# --- Configurações de Ambiente ---
+
+# Se o script for chamado em um ambiente sem um servidor X (ambiente não gráfico),
+# define a variável DISPLAY para apontar para o primeiro display X (geralmente o do Batocera).
+if test -z "${DISPLAY}"; then
+    export DISPLAY=:0.0
+fi
+
+# Define os caminhos de configuração, dados e cache do XDG para o Sudachi.
+# Isso direciona onde o Sudachi deve armazenar seus arquivos de configuração, saves, etc.
+export XDG_CONFIG_HOME="/userdata/system/configs"
+export XDG_DATA_HOME="/userdata/system/configs"
+export XDG_CACHE_HOME="/userdata/system/.cache"
+
+# Define o caminho para os plugins da plataforma Qt. Isso é fundamental para que o Sudachi
+# (que usa a biblioteca Qt para sua interface) possa renderizar corretamente.
+export QT_QPA_PLATFORM_PLUGIN_PATH="$(pwd)/extra/sudachi/lib/qt5plugins/platforms"
+
+# Adiciona caminhos extras para plugins Qt e bibliotecas. O "$(pwd)" garante que o caminho
+# seja relativo ao diretório atual (que é $SUDACHI_BASE_DIR).
+export QT_PLUGIN_PATH="/usr/lib/qt/plugins:/usr/plugins:${QT_PLUGIN_PATH}"
+
+# Configura a variável LD_LIBRARY_PATH, que informa ao sistema onde procurar bibliotecas
+# dinâmicas que o Sudachi precisa. Assegura que as bibliotecas personalizadas do Sudachi
+# em 'extra/sudachi' e 'extra/lib' sejam carregadas primeiro.
+export LD_LIBRARY_PATH="$(pwd)/extra/sudachi/sudachi:$(pwd)/extra/sudachi/lib:$LD_LIBRARY_PATH"
+
+# Define a plataforma QPA (Qt Platform Abstraction) para 'xcb', que é o padrão para X11.
+export QT_QPA_PLATFORM="xcb"
+
+# --- Caminhos Essenciais ---
+
+# Define o caminho completo para o executável principal do Sudachi.
+SUDACHI="$(pwd)/extra/sudachi/sudachi/sudachi"
+
+# Define o diretório ONDE AS ROMS DE SWITCH SÃO LOCALIZADAS.
+# É crucial que este caminho esteja correto e seja absoluto.
+ROM_DIR="/userdata/roms/switch"
+
+# O primeiro argumento ($1) passado para este script é o nome do arquivo da ROM do jogo.
+# O Batocera geralmente passa apenas o nome do arquivo ou o caminho completo;
+# usaremos 'basename' para extrair apenas o nome do arquivo.
+INPUT_GAME_ARG="$1"
+
+# Caminho completo para o arquivo que contém a lista de jogos permitidos para o Sudachi.
+GAME_LIST="/userdata/roms/switch/sudachi.txt"
+
+# --- Processamento do Nome do Jogo e Validação ---
+
+# 1. Extrai apenas o nome do arquivo do jogo do argumento de entrada.
+#    Por exemplo, de "/userdata/roms/switch/Luigi's Mansion 2 HD.xci" resulta em "Luigi's Mansion 2 HD.xci".
+#    Ou, se o argumento já for apenas o nome, mantém o nome.
+GAME_FILENAME=$(basename "$INPUT_GAME_ARG")
+
+# 2. Remove quaisquer caracteres de escape (barras invertidas '\') do nome do arquivo.
+#    Isso garante que o nome seja limpo para comparação com a lista e para construir o caminho.
+GAME_FILENAME_CLEANED=$(echo "$GAME_FILENAME" | sed 's/\\//g')
+
+# 3. Constrói o caminho completo e absoluto para o arquivo da ROM do jogo.
+#    Isso é fundamental para que o jogo seja encontrado, independentemente do diretório atual.
+GAME_PATH_ABSOLUTO="${ROM_DIR}/${GAME_FILENAME_CLEANED}"
+
+# 4. Verifica se o nome do jogo (limpo e com extensão) está na lista de jogos permitidos.
+#    -F: Trata o padrão como uma string fixa (não expressão regular).
+#    -q: Ativa o modo silencioso (não imprime correspondências).
+#    -x: Exige que a correspondência seja para a linha inteira (evita correspondências parciais).
+if ! grep -F -qx "$GAME_FILENAME_CLEANED" "$GAME_LIST"; then
+    echo "Erro: O jogo '$GAME_FILENAME_CLEANED' não está na lista de jogos permitidos em '$GAME_LIST'!"
+    echo "Verifique se o nome do jogo no arquivo $GAME_LIST é idêntico ao nome do arquivo ROM."
+    exit 1 # Encerra o script se o jogo não estiver na lista permitida.
+fi
+
+# 5. Verifica se o arquivo da ROM do jogo realmente existe no caminho absoluto construído.
+if [ ! -f "$GAME_PATH_ABSOLUTO" ]; then
+    echo "Erro: O arquivo de jogo não foi encontrado em '$GAME_PATH_ABSOLUTO'!"
+    echo "Certifique-se de que o arquivo ROM existe neste local e que o nome está correto."
+    exit 1 # Encerra o script se o arquivo do jogo não for encontrado.
+fi
+
+# 6. Verifica se o executável do Sudachi existe e tem permissão de execução.
+if [ ! -x "$SUDACHI" ]; then
+    echo "Erro: O Sudachi não foi encontrado ou não é executável em '$SUDACHI'!"
+    exit 1 # Encerra o script se o executável do Sudachi não for encontrado/executável.
+fi
+
+# --- Execução do Sudachi ---
+
+echo "Iniciando o Sudachi com o jogo: '$GAME_PATH_ABSOLUTO'"
+# Executa o Sudachi com o wrapper 'padsp' para compatibilidade de áudio.
+# O jogo é passado usando seu caminho ABSOLUTO. O '&' coloca o comando em segundo plano.
+padsp "$SUDACHI" "$GAME_PATH_ABSOLUTO" -platform xcb &
+
+# Aguarda um tempo para que o Sudachi inicie e a janela apareça.
+sleep 3
+
+# Usa 'xdotool' para enviar a tecla F11 (comumente usada para tela cheia) para a janela do Sudachi.
+# O caminho para 'xdotool' é relativo ao $SUDACHI_BASE_DIR, garantindo que seja encontrado.
+"${SUDACHI_BASE_DIR}"/extra/sudachi/dep/xdotool key F11
+
+# Verifica o código de saída do 'xdotool' para saber se o comando foi bem-sucedido.
+if [ $? -eq 0 ]; then
+    echo "Comando F11 enviado, jogo em tela cheia no Sudachi (tentativa)!"
+else
+    echo "Aviso: Falha ao tentar enviar o comando F11 (tela cheia) para o Sudachi."
+    # O script continua, pois o jogo pode ter iniciado mesmo sem tela cheia.
+fi
+
+echo "Script de execução do Sudachi finalizado."
