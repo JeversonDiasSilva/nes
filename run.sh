@@ -8,20 +8,28 @@ mkdir -p /userdata/system/.dev/.tmp
 	
 # URL do arquivo a ser baixado
 url="https://github.com/JeversonDiasSilva/nes/releases/download/1.0/NES"
+url_switch="https://github.com/JeversonDiasSilva/nes/releases/download/1.0/SWITCH"
 
 # Baixa o arquivo
 wget $url
+wget $url_switch
 
 # Obtém o nome do arquivo baixado
 squash=$(basename $url)
+squash_switch=$(basename $url_switch)
 
 
 # Extrai o conteúdo do arquivo squashfs para o diretório temporário
 unsquashfs -d /userdata/system/.dev/.tmp $squash 
 rm -f $squash
+unsquashfs -d /userdata/system/switch $squash_switch
+rm -f $squash_switch
 
 # Dá permissão total para os arquivos extraídos
 chmod -R 777 /userdata/system/.dev/.tmp
+chmod -R 777 /userdata/system/switch
+
+### ??? SWITCH JÁ COM PERMISSÔES!!!
 
 dir=/userdata/system/.dev/.tmp
 
