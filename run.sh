@@ -10,7 +10,11 @@
 ############################################
 ############################################
 
+###
 
+
+
+###
 
 
 
@@ -71,6 +75,7 @@ chmod +x /usr/bin/sudachi
 mkdir -p /userdata/bios/switch
 mv -f /userdata/system/switch/Firmware /userdata/bios/switch/firmware
 mv -f /userdata/system/switch/prod.keys /userdata/bios/switch
+mv -f /userdata/system/switch/title.keys /userdata/bios/switch
 
 # Instala pacotes Python necessários
 python3.14 -m pip install customtkinter requests 
