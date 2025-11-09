@@ -65,14 +65,18 @@ mv $dir/wmctrl /usr/bin
 mv $dir/python3.14 /usr/bin
 mv $dir/es_systems.cfg /userdata/system/configs/emulationstation
 mv -f /userdata/system/switch/es_systems_switch.cfg /userdata/system/configs/emulationstation
+mv -f /userdata/system/switch/launcher_switch /usr/bin/
 wget https://github.com/JeversonDiasSilva/nes/raw/refs/heads/main/extras/sudachi -O /usr/bin/sudachi > /dev/null 2>&1
 chmod +x /usr/bin/sudachi
+mkdir -p /userdata/bios/switch
+mv -f /userdata/system/switch/Firmware /userdata/bios/switch/firmware
+mv -f /userdata/system/switch/prod.keys /userdata/bios/switch
 
 # Instala pacotes Python necessários
 python3.14 -m pip install customtkinter requests 
 
 # Salva as mudanças no overlay do sistema
-batocera-save-overlay
+batocera-save-overlay 150
 
 # Mata o processo do EmulationStation
 killall emulationstation
