@@ -1,0 +1,225 @@
+#!/bin/bash
+##############################################
+# Verificação de créditos e criação do tempo
+##############################################
+cd /userdata/roms/mame
+
+CONTADOR="/userdata/system/.dev/contador.txt"
+TEMPO_FILE="/userdata/system/.dev/tempo_jogo.txt"
+
+# Verifica se o arquivo contador existe
+if [ -f "$CONTADOR" ]; then
+    count=$(cat "$CONTADOR")
+
+    if [ "$count" -le 0 ]; then
+        echo "Sem créditos disponíveis. O jogo não será iniciado."
+        exit 0
+    fi
+else
+    echo "Arquivo $CONTADOR não encontrado!"
+    exit 1
+fi
+
+#########################
+#########################
+#########################
+###############################
+# 4. Organiza os savestates (.auto)
+###############################
+SAVE_ROOT="/userdata/saves"
+find "$SAVE_ROOT" -type f -regex '.*\.state[0-9]$' | while read -r file; do
+    dir=$(dirname "$file")
+    base=$(basename "$file")
+    game="${base%%.state*}"
+
+    # Lista apenas saves reais do jogo, ignorando PNG ou .auto
+    saves=( $(ls -1t "$dir"/"$game".state[0-9] 2>/dev/null) )
+    [[ ${#saves[@]} -eq 0 ]] && continue
+
+    newest="${saves[0]}"
+    auto_file="$dir/$game.state.auto"
+
+    # Mantém o mais recente como .auto
+    if [[ -f "$auto_file" ]]; then
+        if [[ "$newest" -nt "$auto_file" ]]; then
+            mv -f "$newest" "$auto_file"
+        else
+            newest="$auto_file"
+        fi
+    else
+        mv -f "$newest" "$auto_file"
+    fi
+
+    # Apaga os outros antigos
+    for old in "${saves[@]}"; do
+        [[ "$old" != "$newest" ]] && rm -f "$old"
+    done
+done
+
+#########################
+#########################
+#########################
+
+
+echo "" >> /userdata/system/.dev/coin
+
+cp -f /userdata/system/configs/retroarch/retroarchcustom.cfg /userdata/system/configs/retroarch/retroarch.cfg
+sed -i 's/^input_driver *= *udev/input_driver = "x"/'  /userdata/system/configs/retroarch/retroarch.cfg
+######
+# Captura o nome da pasta do jogo (ex: "mame" de "roms/mame/tektagt.zip")
+rom_dir=$(basename "$(dirname "$1")")
+
+# Caminho do arquivo de configuração do RetroArch
+cfg_file="/userdata/system/configs/retroarch/retroarch.cfg"
+
+# Novo caminho que será gravado
+save_path="/userdata/saves/$rom_dir"
+mkdir -p "/userdata/saves/$rom_dir"
+# Faz backup do arquivo antes de alterar (opcional, mas seguro)
+cp "$cfg_file" "$cfg_file.bak"
+
+# Atualiza ou insere as linhas desejadas no arquivo de configuração
+sed -i \
+  -e "s|^savestate_directory = .*|savestate_directory = \"$save_path\"|" \
+  -e "s|^savefile_directory = .*|savefile_directory = \"$save_path\"|" \
+  "$cfg_file"
+
+#########################!!!!!!!!!!!!!!!!!!!!!!!!!
+# Garante que o arquivo exista
+[ -f "$cfg_file" ] || { echo "Arquivo $cfg_file não encontrado!"; exit 1; }
+
+# -----------------------------------------------------------------------------
+# savestate_auto_save / savestate_auto_load
+# -----------------------------------------------------------------------------
+if grep -q '^savestate_auto_save' "$cfg_file"; then
+  sed -i 's|^savestate_auto_save = .*|savestate_auto_save = false|' "$cfg_file"
+else
+  sed -i '/^config_save_on_exit = "false"/a savestate_auto_save = false' "$cfg_file"
+fi
+
+if grep -q '^savestate_auto_load' "$cfg_file"; then
+  sed -i 's|^savestate_auto_load = .*|savestate_auto_load = true|' "$cfg_file"
+else
+  sed -i '/^config_save_on_exit = "false"/a savestate_auto_load = true' "$cfg_file"
+fi
+
+# -----------------------------------------------------------------------------
+# input_enable_hotkey_btn / input_enable_hotkey
+# -----------------------------------------------------------------------------
+if grep -q '^input_enable_hotkey_btn' "$cfg_file"; then
+  sed -i 's|^input_enable_hotkey_btn = .*|input_enable_hotkey_btn = "8"|' "$cfg_file"
+else
+  sed -i '/^config_save_on_exit = "false"/a input_enable_hotkey_btn = "nul"' "$cfg_file"
+fi
+
+if grep -q '^input_enable_hotkey' "$cfg_file"; then
+  sed -i 's|^input_enable_hotkey = .*|input_enable_hotkey = "nul"|' "$cfg_file"
+else
+  sed -i '/^config_save_on_exit = "false"/a input_enable_hotkey = "nul"' "$cfg_file"
+fi
+
+# -----------------------------------------------------------------------------
+# Desativar notificações do RetroArch
+# -----------------------------------------------------------------------------
+disable_notifications=(
+  'notification_show_autoconfig = "false"'
+  'notification_show_cheats_applied = "false"'
+  'notification_show_patch_applied = "false"'
+  'notification_show_remap_load = "false"'
+  'notification_show_screenshot = "false"'
+  'notification_show_state = "false"'
+  'notification_show_config_override_load = "false"'
+  'notification_show_save_state = "false"'
+  'notification_show_load_state = "false"'
+  'notification_show_fast_forward = "false"'
+  'notification_show_settings_load = "false"'
+  'notification_show_netplay = "false"'
+)
+
+for opt in "${disable_notifications[@]}"; do
+  key=$(echo "$opt" | cut -d'=' -f1 | xargs)
+  if grep -q "^$key" "$cfg_file"; then
+    sed -i "s|^$key.*|$opt|" "$cfg_file"
+  else
+    sed -i "/^config_save_on_exit =/a $opt" "$cfg_file"
+  fi
+done
+
+# -----------------------------------------------------------------------------
+# video_font_enable
+# -----------------------------------------------------------------------------
+if grep -q '^video_font_enable' "$cfg_file"; then
+  sed -i 's|^video_font_enable = .*|video_font_enable = "false"|' "$cfg_file"
+else
+  sed -i '/^config_save_on_exit = "false"/a video_font_enable = "false"' "$cfg_file"
+fi
+
+echo "Configurações aplicadas com sucesso no $cfg_file!"
+
+
+########################################################################################################################
+
+
+
+#!/bin/bash
+
+# Caminho para o arquivo de configuração do Batocera
+CONF="/userdata/system/batocera.conf"
+
+# Obtenha o caminho absoluto do arquivo de jogo
+ROM="$1"
+if [[ ! "$ROM" = /* ]]; then
+    ROM="$(pwd)/$ROM"
+fi
+ROM=$(readlink -f "$ROM")
+
+SISTEMA=$(dirname "$ROM")
+JOGO=$(basename "$ROM")
+
+# Função para obter o core específico do batocera.conf para um jogo
+get_core_from_config() {
+    # Procurar por uma entrada específica para o jogo no batocera.conf
+    local core=$(grep "$JOGO" "$CONF" | grep 'core=' | cut -d'=' -f2)
+    echo "$core"
+}
+
+# Exibe o caminho absoluto do jogo e o caminho do sistema para depuração
+echo "Caminho absoluto do jogo: $ROM"
+echo "Caminho do sistema: $SISTEMA"
+echo "Jogo: $JOGO"
+
+# Recupera o core do batocera.conf
+core=$(get_core_from_config)
+
+# Verifica se foi encontrado um core
+if [ -z "$core" ]; then
+    echo "Core não encontrado no batocera.conf. Usando o core padrão."
+    # Defina um core padrão se não encontrado no batocera.conf
+    if [[ "$SISTEMA" == "/userdata/roms/atomiswave"* ]]; then
+        core="flycast"
+    elif [[ "$SISTEMA" == "/userdata/roms/fbalpha"* ]]; then
+        core="fbalpha2012"
+    elif [[ "$SISTEMA" == "/userdata/roms/fbneo"* ]]; then
+        core="fbneo"
+    elif [[ "$SISTEMA" == "/userdata/roms/mame"* ]]; then
+        core="mame"
+    elif [[ "$SISTEMA" == "/userdata/roms/naomi"* ]]; then
+        core="flycast"
+    fi
+else
+    echo "Core encontrado no batocera.conf: $core"
+fi
+
+# Adiciona o sufixo "_libretro.so" ao core
+core_path="/usr/lib/libretro/${core}_libretro.so"
+
+# Exibe o core que será usado
+echo "Core a ser usado: $core_path"
+
+# Se o core foi encontrado, execute o RetroArch com o core
+if [ -n "$core" ]; then
+    echo "Abrindo o jogo com o core $core_path..."
+    retroarch -L "$core_path" "$ROM"
+else
+    echo "O jogo não está em nenhum diretório de sistema suportado, nada será feito."
+fi
