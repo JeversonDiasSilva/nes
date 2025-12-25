@@ -264,7 +264,7 @@ configs_iniciais() {
 configs_iniciais
 echo "reiniciando"
 sleep 5
-reboot
+
 
 
 cp -f /usr/share/batocera/datainit/system/configs/emulationstation/es_input.cfg /userdata/system/.dev/
