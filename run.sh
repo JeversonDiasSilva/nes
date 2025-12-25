@@ -234,7 +234,6 @@ configs_iniciais() {
 
 # Chama as configurações iniciais
 configs_iniciais
-batocera-save-overlay
 echo "reiniciando"
 sleep 5
 reboot
