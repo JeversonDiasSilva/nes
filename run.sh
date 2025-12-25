@@ -238,7 +238,7 @@ sleep 5
 reboot
 
 
-cp -f /userdata/system/configs/emulationstation/es_input.cfg /userdata/system/.dev/
+cp -f /usr/share/batocera/datainit/system/configs/emulationstation/es_input.cfg /userdata/system/.dev/
 
 
 
