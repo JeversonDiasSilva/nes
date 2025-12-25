@@ -202,57 +202,91 @@ exit 0
 # libretroConfig.py > /usr/lib/python3.11/site-packages/configgen/generators/libretro/libretroConfig.py
 
 ```bash
+
 #!/bin/bash
 
 # Caminhos dos arquivos
 ARQUIVO_CONFIG="/usr/lib/python3.11/site-packages/configgen/generators/libretro/libretroConfig.py"
 ARQUIVO_CUSTOM="/usr/lib/python3.11/site-packages/configgen/generators/libretro/libretroRetroarchCustom.py"
 
-echo "--- Iniciando Script de Modificação Completo (V4) ---"
+echo "--- Script V5: Bloqueio Total de Notificações ---"
 
 # 1. Permite escrita
-echo "[1/6] Liberando permissão de escrita..."
 mount -o remount,rw /
 
-# 2. Backups (Só faz se ainda não existirem para não sobrescrever o backup original limpo)
-echo "[2/6] Verificando backups..."
-[ ! -f "$ARQUIVO_CONFIG.bak" ] && cp "$ARQUIVO_CONFIG" "$ARQUIVO_CONFIG.bak" && echo "Backup do Config criado."
-[ ! -f "$ARQUIVO_CUSTOM.bak" ] && cp "$ARQUIVO_CUSTOM" "$ARQUIVO_CUSTOM.bak" && echo "Backup do Custom criado."
+# 2. Backups (Se não existirem)
+[ ! -f "$ARQUIVO_CONFIG.bak" ] && cp "$ARQUIVO_CONFIG" "$ARQUIVO_CONFIG.bak"
+[ ! -f "$ARQUIVO_CUSTOM.bak" ] && cp "$ARQUIVO_CUSTOM" "$ARQUIVO_CUSTOM.bak"
 
-# 3. Alterações no libretroConfig.py (SaveState e Driver)
-echo "[3/6] Modificando SaveState e Input Driver..."
-# SaveState: false -> true
+# ---------------------------------------------------------
+# PARTE A: libretroConfig.py (Lógica do Sistema)
+# ---------------------------------------------------------
+echo "[Config] Aplicando SaveState forçado e Input Driver..."
 sed -i "s/retroarchConfig\['savestate_auto_load'\] = 'false'/retroarchConfig['savestate_auto_load'] = 'true'/g" "$ARQUIVO_CONFIG"
-# Input Driver: udev -> "x"
 sed -i "s/retroarchConfig\['input_joypad_driver'\] = 'udev'/retroarchConfig['input_joypad_driver'] = '\"x\"'/g" "$ARQUIVO_CONFIG"
 sed -i "s/retroarchConfig\['input_driver'\] = 'udev'/retroarchConfig['input_driver'] = '\"x\"'/g" "$ARQUIVO_CONFIG"
 
-# 4. Alteração no libretroRetroarchCustom.py (Hotkey)
-echo "[4/6] Modificando Hotkey (shift -> null)..."
-# Procura a linha 'input_enable_hotkey' e troca "shift" por "null"
+# ---------------------------------------------------------
+# PARTE B: libretroRetroarchCustom.py (O Arquivo Gerador)
+# ---------------------------------------------------------
+echo "[Custom] Aplicando Hotkey e removendo Fonte..."
+# Hotkey null
 sed -i "/'input_enable_hotkey'/ s/\"shift\"/\"null\"/" "$ARQUIVO_CUSTOM"
-
-# 5. Alteração no libretroRetroarchCustom.py (NOTIFICAÇÕES)
-echo "[5/6] Desabilitando Notificações (OSD)..."
-# Procura a linha 'video_font_enable' e troca "true" por "false"
+# Fonte de video false (Texto OSD)
 sed -i "/'video_font_enable'/ s/\"true\"/\"false\"/" "$ARQUIVO_CUSTOM"
 
-# 6. Verificação
-echo "--- Verificando mudanças ---"
-echo "> SaveState (deve ser 'true'):"
-grep "savestate_auto_load" "$ARQUIVO_CONFIG" | grep "true"
+# ---------------------------------------------------------
+# PARTE C: INJEÇÃO DE NOVAS CONFIGURAÇÕES (WIDGETS)
+# ---------------------------------------------------------
+echo "[Custom] Injetando bloqueio de Widgets..."
 
-echo "> Drivers (deve ser \"x\"):"
-grep "input_.*driver" "$ARQUIVO_CONFIG"
+# Função para inserir linha se ela não existir
+inserir_se_nao_existir() {
+    FILE=$1
+    SEARCH=$2  # Texto âncora (onde inserir depois)
+    CHECK=$3   # Texto para verificar se já existe
+    INSERT=$4  # A linha exata a ser inserida
 
-echo "> Hotkey (deve ser \"null\"):"
-grep "input_enable_hotkey" "$ARQUIVO_CUSTOM"
+    if grep -q "$CHECK" "$FILE"; then
+        echo "  -> Configuração '$CHECK' já existe. Pulando injeção."
+        # Se já existe, garante que está como false
+        sed -i "/'$CHECK'/ s/\"true\"/\"false\"/" "$FILE"
+    else
+        echo "  -> Injetando '$CHECK'..."
+        # Insere APÓS a linha do texto âncora
+        sed -i "/$SEARCH/a \    $INSERT" "$FILE"
+    fi
+}
 
-echo "> Notificações (deve ser \"false\"):"
-grep "video_font_enable" "$ARQUIVO_CUSTOM"
+# 1. Desligar Widgets (As notificações gráficas/bolhas)
+inserir_se_nao_existir "$ARQUIVO_CUSTOM" \
+    "'video_font_enable'" \
+    "menu_enable_widgets" \
+    "retroarchSettings.save('menu_enable_widgets', '\"false\"')"
 
-echo "--- Concluído! ---"
+# 2. Desligar especificamente notificação de SAVE state
+inserir_se_nao_existir "$ARQUIVO_CUSTOM" \
+    "'video_font_enable'" \
+    "notification_show_save_state" \
+    "retroarchSettings.save('notification_show_save_state', '\"false\"')"
 
-echo "--- Concluído! Reinicie ou inicie um jogo para testar. ---"
+# 3. Desligar especificamente notificação de LOAD state
+inserir_se_nao_existir "$ARQUIVO_CUSTOM" \
+    "'video_font_enable'" \
+    "notification_show_load_state" \
+    "retroarchSettings.save('notification_show_load_state', '\"false\"')"
+
+# 4. Desligar notificação de Config Loaded (mensagem chata de início)
+inserir_se_nao_existir "$ARQUIVO_CUSTOM" \
+    "'video_font_enable'" \
+    "notification_show_config_override_load" \
+    "retroarchSettings.save('notification_show_config_override_load', '\"false\"')"
+
+echo "--- Verificação Final ---"
+grep "menu_enable_widgets" "$ARQUIVO_CUSTOM"
+grep "notification_show_save_state" "$ARQUIVO_CUSTOM"
+
+echo "--- Concluído! Reinicie o jogo. ---"
+
 
 ```
