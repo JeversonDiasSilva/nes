@@ -98,49 +98,47 @@ python3.14 -m pip install customtkinter requests
 
 
 # Define o caminho do arquivo alvo
-ARQUIVO="/usr/lib/python3.11/site-packages/configgen/generators/libretro/libretroConfig.py"
+# Caminhos dos arquivos
+ARQUIVO_CONFIG="/usr/lib/python3.11/site-packages/configgen/generators/libretro/libretroConfig.py"
+ARQUIVO_CUSTOM="/usr/lib/python3.11/site-packages/configgen/generators/libretro/libretroRetroarchCustom.py"
 
-echo "--- Iniciando Script de Modificação ---"
+echo "--- Iniciando Script de Modificação Completo ---"
 
-# 1. Permite a escrita no sistema (mount rw)
-echo "[1/4] Liberando permissão de escrita no sistema..."
+# 1. Permite escrita
+echo "[1/5] Liberando permissão de escrita..."
 mount -o remount,rw /
 
-# 2. Cria um backup do arquivo original (caso algo dê errado)
-if [ -f "$ARQUIVO" ]; then
-    echo "[2/4] Criando backup do arquivo original..."
-    cp "$ARQUIVO" "$ARQUIVO.bak_$(date +%F_%H-%M)"
-else
-    echo "ERRO: Arquivo não encontrado: $ARQUIVO"
-    exit 1
-fi
+# 2. Backups
+echo "[2/5] Criando backups de segurança..."
+[ -f "$ARQUIVO_CONFIG" ] && cp "$ARQUIVO_CONFIG" "$ARQUIVO_CONFIG.bak_$(date +%F_%H-%M)"
+[ -f "$ARQUIVO_CUSTOM" ] && cp "$ARQUIVO_CUSTOM" "$ARQUIVO_CUSTOM.bak_$(date +%F_%H-%M)"
 
-# 3. Executa as substituições com SED
+# 3. Alterações no libretroConfig.py (SaveState e Driver)
+echo "[3/5] Modificando libretroConfig.py..."
+# SaveState: false -> true
+sed -i "s/retroarchConfig\['savestate_auto_load'\] = 'false'/retroarchConfig['savestate_auto_load'] = 'true'/g" "$ARQUIVO_CONFIG"
+# Input Driver: udev -> "x"
+sed -i "s/retroarchConfig\['input_joypad_driver'\] = 'udev'/retroarchConfig['input_joypad_driver'] = '\"x\"'/g" "$ARQUIVO_CONFIG"
+sed -i "s/retroarchConfig\['input_driver'\] = 'udev'/retroarchConfig['input_driver'] = '\"x\"'/g" "$ARQUIVO_CONFIG"
 
-echo "[3/4] Aplicando alterações..."
+# 4. Alteração no libretroRetroarchCustom.py (Hotkey)
+echo "[4/5] Modificando libretroRetroarchCustom.py (Hotkey)..."
+# Hotkey: "shift" -> "null"
+# O comando abaixo procura por 'input_enable_hotkey' seguido de qualquer espaçamento e '"shift"'
+sed -i "s/'input_enable_hotkey', *'\"shift\"'/'input_enable_hotkey',                       '\"null\"'/g" "$ARQUIVO_CUSTOM"
 
-# A) Muda savestate_auto_load de 'false' para 'true'
-# (Afeta a lógica do 'else' onde ele forçava false)
-sed -i "s/retroarchConfig\['savestate_auto_load'\] = 'false'/retroarchConfig['savestate_auto_load'] = 'true'/g" "$ARQUIVO"
-
-# B) Muda input_joypad_driver de 'udev' para '"x"'
-sed -i "s/retroarchConfig\['input_joypad_driver'\] = 'udev'/retroarchConfig['input_joypad_driver'] = '\"x\"'/g" "$ARQUIVO"
-
-# C) Muda input_driver de 'udev' para '"x"'
-sed -i "s/retroarchConfig\['input_driver'\] = 'udev'/retroarchConfig['input_driver'] = '\"x\"'/g" "$ARQUIVO"
-
-# 4. Verificação final
+# 5. Verificação
 echo "--- Verificando mudanças ---"
+echo "> SaveState (deve ser 'true'):"
+grep "savestate_auto_load" "$ARQUIVO_CONFIG" | grep "true"
 
-echo "Procurando savestate_auto_load..."
-grep "savestate_auto_load" "$ARQUIVO"
+echo "> Drivers (deve ser \"x\"):"
+grep "input_.*driver" "$ARQUIVO_CONFIG"
 
-echo "Procurando input_driver..."
-grep "input_.*driver" "$ARQUIVO"
+echo "> Hotkey (deve ser \"null\"):"
+grep "input_enable_hotkey" "$ARQUIVO_CUSTOM"
 
-echo "--- Concluído! Reinicie ou inicie um jogo para testar. ---"
-
-
+echo "--- Concluído! ---"
 
 
 
