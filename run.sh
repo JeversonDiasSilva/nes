@@ -257,6 +257,6 @@ killall -9 pcmanfm xterm &
 
 # Remove os arquivos temporários
 
-
+startx
 ######
 
