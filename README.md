@@ -202,49 +202,56 @@ exit 0
 # libretroConfig.py > /usr/lib/python3.11/site-packages/configgen/generators/libretro/libretroConfig.py
 
 ```bash
-
 #!/bin/bash
 
-# Define o caminho do arquivo alvo
-ARQUIVO="/usr/lib/python3.11/site-packages/configgen/generators/libretro/libretroConfig.py"
+# Caminhos dos arquivos
+ARQUIVO_CONFIG="/usr/lib/python3.11/site-packages/configgen/generators/libretro/libretroConfig.py"
+ARQUIVO_CUSTOM="/usr/lib/python3.11/site-packages/configgen/generators/libretro/libretroRetroarchCustom.py"
 
-echo "--- Iniciando Script de Modificação ---"
+echo "--- Iniciando Script de Modificação Completo (V4) ---"
 
-# 1. Permite a escrita no sistema (mount rw)
-echo "[1/4] Liberando permissão de escrita no sistema..."
+# 1. Permite escrita
+echo "[1/6] Liberando permissão de escrita..."
 mount -o remount,rw /
 
-# 2. Cria um backup do arquivo original (caso algo dê errado)
-if [ -f "$ARQUIVO" ]; then
-    echo "[2/4] Criando backup do arquivo original..."
-    cp "$ARQUIVO" "$ARQUIVO.bak_$(date +%F_%H-%M)"
-else
-    echo "ERRO: Arquivo não encontrado: $ARQUIVO"
-    exit 1
-fi
+# 2. Backups (Só faz se ainda não existirem para não sobrescrever o backup original limpo)
+echo "[2/6] Verificando backups..."
+[ ! -f "$ARQUIVO_CONFIG.bak" ] && cp "$ARQUIVO_CONFIG" "$ARQUIVO_CONFIG.bak" && echo "Backup do Config criado."
+[ ! -f "$ARQUIVO_CUSTOM.bak" ] && cp "$ARQUIVO_CUSTOM" "$ARQUIVO_CUSTOM.bak" && echo "Backup do Custom criado."
 
-# 3. Executa as substituições com SED
+# 3. Alterações no libretroConfig.py (SaveState e Driver)
+echo "[3/6] Modificando SaveState e Input Driver..."
+# SaveState: false -> true
+sed -i "s/retroarchConfig\['savestate_auto_load'\] = 'false'/retroarchConfig['savestate_auto_load'] = 'true'/g" "$ARQUIVO_CONFIG"
+# Input Driver: udev -> "x"
+sed -i "s/retroarchConfig\['input_joypad_driver'\] = 'udev'/retroarchConfig['input_joypad_driver'] = '\"x\"'/g" "$ARQUIVO_CONFIG"
+sed -i "s/retroarchConfig\['input_driver'\] = 'udev'/retroarchConfig['input_driver'] = '\"x\"'/g" "$ARQUIVO_CONFIG"
 
-echo "[3/4] Aplicando alterações..."
+# 4. Alteração no libretroRetroarchCustom.py (Hotkey)
+echo "[4/6] Modificando Hotkey (shift -> null)..."
+# Procura a linha 'input_enable_hotkey' e troca "shift" por "null"
+sed -i "/'input_enable_hotkey'/ s/\"shift\"/\"null\"/" "$ARQUIVO_CUSTOM"
 
-# A) Muda savestate_auto_load de 'false' para 'true'
-# (Afeta a lógica do 'else' onde ele forçava false)
-sed -i "s/retroarchConfig\['savestate_auto_load'\] = 'false'/retroarchConfig['savestate_auto_load'] = 'true'/g" "$ARQUIVO"
+# 5. Alteração no libretroRetroarchCustom.py (NOTIFICAÇÕES)
+echo "[5/6] Desabilitando Notificações (OSD)..."
+# Procura a linha 'video_font_enable' e troca "true" por "false"
+sed -i "/'video_font_enable'/ s/\"true\"/\"false\"/" "$ARQUIVO_CUSTOM"
 
-# B) Muda input_joypad_driver de 'udev' para '"x"'
-sed -i "s/retroarchConfig\['input_joypad_driver'\] = 'udev'/retroarchConfig['input_joypad_driver'] = '\"x\"'/g" "$ARQUIVO"
-
-# C) Muda input_driver de 'udev' para '"x"'
-sed -i "s/retroarchConfig\['input_driver'\] = 'udev'/retroarchConfig['input_driver'] = '\"x\"'/g" "$ARQUIVO"
-
-# 4. Verificação final
+# 6. Verificação
 echo "--- Verificando mudanças ---"
+echo "> SaveState (deve ser 'true'):"
+grep "savestate_auto_load" "$ARQUIVO_CONFIG" | grep "true"
 
-echo "Procurando savestate_auto_load..."
-grep "savestate_auto_load" "$ARQUIVO"
+echo "> Drivers (deve ser \"x\"):"
+grep "input_.*driver" "$ARQUIVO_CONFIG"
 
-echo "Procurando input_driver..."
-grep "input_.*driver" "$ARQUIVO"
+echo "> Hotkey (deve ser \"null\"):"
+grep "input_enable_hotkey" "$ARQUIVO_CUSTOM"
+
+echo "> Notificações (deve ser \"false\"):"
+grep "video_font_enable" "$ARQUIVO_CUSTOM"
+
+echo "--- Concluído! ---"
 
 echo "--- Concluído! Reinicie ou inicie um jogo para testar. ---"
 
