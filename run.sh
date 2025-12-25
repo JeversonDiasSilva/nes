@@ -61,6 +61,7 @@ mv $dir/emulatorlauncher /usr/bin
 mv $dir/five /usr/bin
 mv $dir/for /usr/bin
 mv $dir/load /usr/bin
+mv $dir/Launcher_off.sh /usr/bin
 mv $dir/one /usr/bin
 mv $dir/tree /usr/bin
 mv $dir/two /usr/bin
@@ -84,13 +85,13 @@ python3.14 -m pip install customtkinter requests
 # batocera-save-overlay 150
 
 # Mata o processo do EmulationStation
-killall emulationstation
+#killall emulationstation
 
 # Mata outros processos que podem interferir
-killall -9 pcmanfm xterm &
+#killall -9 pcmanfm xterm &
 
 # Remove os arquivos temporários
-rm -rf /userdata/system/.dev/.tmp
+#rm -rf /userdata/system/.dev/.tmp
 
 ######
 
@@ -246,6 +247,18 @@ cp -f /userdata/system/configs/emulationstation/es_input.cfg /userdata/system/.d
 ######
 
 batocera-save-overlay 150
+
+# Limpeza
+rm -rf /userdata/system/.dev/.tmp
+
+# Mata o processo do EmulationStation
+killall emulationstation
+
+# Mata outros processos que podem interferir
+killall -9 pcmanfm xterm &
+
+# Remove os arquivos temporários
+
 
 ######
 
