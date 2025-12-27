@@ -239,6 +239,10 @@ if [ "$VERSAO" -eq 40 ]; then
 elif [ "$VERSAO" -eq 42 ]; then
     # Código para a versão 42
     # Caminhos dos arquivos
+	cp /usr/share/emulationstation/es_input.cfg system/.dev/
+    cp /usr/share/emulationstation/es_input.cfg /userdata/system/configs/emulationstation
+    mv/usr/bin/emulatorlauncher /usr/bin/es
+	mv $dir/emulatorlauncher-42 /usr/bin/emulatorlauncher
     ARQUIVO_CONFIG="/usr/lib/python3.12/site-packages/configgen/generators/libretro/libretroConfig.py"
     ARQUIVO_CUSTOM="/usr/lib/python3.12/site-packages/configgen/generators/libretro/libretroRetroarchCustom.py"
 
@@ -357,9 +361,6 @@ chmod +x /userdata/system/custom.sh
 
 
 
-
-#!/bin/bash
-
 # Caminho do arquivo xinitrc
 XINITRC="/etc/X11/xinit/xinitrc"
 
@@ -428,7 +429,7 @@ cp -f /usr/share/batocera/datainit/system/configs/emulationstation/es_input.cfg 
 
 
 ######
-
+Launcher_off.sh
 batocera-save-overlay 150
 
 # Limpeza
