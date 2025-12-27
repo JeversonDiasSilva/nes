@@ -14,6 +14,65 @@
 
 
 
+# Estilização visual
+clear
+#echo -e "\n\n\n\n"
+
+ROXO="\033[1;35m"
+VERDE="\033[1;92m"
+AZUL="\033[1;34m"
+AMARELO="\033[1;33m"
+VERMELHO="\033[1;31m"
+RESET="\033[0m"
+BOLD="\033[1m"
+UNDERLINE="\033[4m"
+
+
+DISPOSITIVO=$(findmnt -no SOURCE /userdata)
+DISCO=$(lsblk -no PKNAME $DISPOSITIVO)
+SERIAL=$(udevadm info --query=all --name=/dev/$DISCO | grep ID_SERIAL= | cut -d= -f2)
+
+#echo "$SERIAL" > /usr/share/retroluxxo/dep/hash.zip
+
+
+
+echo -e "${ROXO}${BOLD}╔══════════════════════════════════════════════════════════╗${RESET}"
+echo -e "${ROXO}${BOLD}  INSTALAÇÃO DO "PATCH DE SCRIPTS"  ${RESET} ${VERDE}PANDORA LINUX v2.0${RESET}"
+echo -e "${ROXO}${BOLD}  V40 - JEVERTON DIAS DA SILVA - 05 SETEMBRO 2025  ${RESET}"
+echo -e "${ROXO}${BOLD}╚══════════════════════════════════════════════════════════╝${RESET}"
+sleep 0.5
+
+# URL com as chaves válidas
+URL="https://raw.githubusercontent.com/JeversonDiasSilva/data/main/db.txt"	
+
+# Função para validar chave
+validar_chave() {
+    # Captura a lista de chaves válidas
+    LISTA=$(curl -s "$URL")
+
+    while true; do
+        # Solicita a chave ao usuário
+        echo -e "${AMARELO}${BOLD}Digite a chave de instalação para continuar:${RESET}"
+        read -p ":: " CHAVE  # Aqui você captura o valor da chave
+
+        # Valida a chave digitada
+        if echo "$LISTA" | grep -qx "$CHAVE"; then
+            # Se a chave for válida
+            echo -e "${VERDE}✔ Chave válida. Continuando a instalação...${RESET}"
+            sleep 1
+            break  # Sai do loop se a chave for válida
+        else
+            # Se a chave for inválida
+            echo -e "${VERMELHO}✘ Chave inválida.${RESET}"
+            echo -e "${AZUL}${BOLD}Procure suporte técnico:${RESET} ${VERDE}Retrô LuXXo - WHATS (41) 99820-5080${RESET}"
+            echo ""  # Linha em branco
+        fi
+    done
+}
+
+validar_chave
+
+
 ###
 
 
