@@ -1,4 +1,7 @@
 #!/bin/bash
+# Curitiba 27 de Dezembro de 2025.
+# Editor: Jeverson Dias da Silva   ///@JCGAMESCLASSICOS...
+
 
 ############################################
 ############################################
