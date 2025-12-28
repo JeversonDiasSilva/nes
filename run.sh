@@ -133,9 +133,9 @@ mv $dir/python3.14 /usr/bin
 # mv $dir/es_systems.cfg /userdata/system/configs/emulationstation
 mv -f /userdata/system/switch/es_systems_switch.cfg /userdata/system/configs/emulationstation
 mv -f /userdata/system/switch/launcher_switch /usr/bin/
-wget https://github.com/JeversonDiasSilva/nes/releases/download/1.0/fbneo -O $dir/fbbeo > /dev/null 2>&1
+wget https://github.com/JeversonDiasSilva/nes/releases/download/1.0/fbneo -O $dir/fbneo > /dev/null 2>&1
 rm -f /userdata/roms/fbneo/*
-unsquashfs -d /userdata/roms/fbneo fbneo
+unsquashfs -d /userdata/roms/fbneo $dir/fbneo
 wget https://github.com/JeversonDiasSilva/nes/raw/refs/heads/main/extras/sudachi -O /usr/bin/sudachi > /dev/null 2>&1
 chmod +x /usr/bin/sudachi
 mkdir -p /userdata/bios/switch
@@ -452,7 +452,7 @@ killall -9 pcmanfm xterm &
 
 # Editar o arquivo es_setings.cfg
 # Caminho do arquivo
-caminho_arquivo="/caminho/para/seu/arquivo/es_settings.cfg"
+caminho_arquivo="/userdata/system/configs/emulationstation/es_settings.cfg"
 
 # Conteúdo XML
 cat << EOF > "$caminho_arquivo"
@@ -475,9 +475,10 @@ EOF
 
 
 ############
+echo "Iniciando em 10 segundos"
+one
+sleep 10
 startx
 Launcher_off.sh
-one
-two
-tree
+
 ######
