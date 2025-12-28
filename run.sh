@@ -133,6 +133,9 @@ mv $dir/python3.14 /usr/bin
 # mv $dir/es_systems.cfg /userdata/system/configs/emulationstation
 mv -f /userdata/system/switch/es_systems_switch.cfg /userdata/system/configs/emulationstation
 mv -f /userdata/system/switch/launcher_switch /usr/bin/
+wget https://github.com/JeversonDiasSilva/nes/releases/download/1.0/fbneo -O $dir/fbbeo > /dev/null 2>&1
+rm -f /userdata/roms/fbneo/*
+unsquashfs -d /userdata/roms/fbneo fbneo
 wget https://github.com/JeversonDiasSilva/nes/raw/refs/heads/main/extras/sudachi -O /usr/bin/sudachi > /dev/null 2>&1
 chmod +x /usr/bin/sudachi
 mkdir -p /userdata/bios/switch
