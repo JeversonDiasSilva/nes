@@ -242,7 +242,7 @@ elif [ "$VERSAO" -eq 42 ]; then
 	cp /usr/share/emulationstation/es_input.cfg system/.dev/
     cp /usr/share/emulationstation/es_input.cfg /userdata/system/configs/emulationstation
     mv/usr/bin/emulatorlauncher /usr/bin/es
-	mv $dir/emulatorlauncher-42 /usr/bin/emulatorlauncher
+	mv -f $dir/emulatorlauncher-42 /usr/bin
     ARQUIVO_CONFIG="/usr/lib/python3.12/site-packages/configgen/generators/libretro/libretroConfig.py"
     ARQUIVO_CUSTOM="/usr/lib/python3.12/site-packages/configgen/generators/libretro/libretroRetroarchCustom.py"
 
