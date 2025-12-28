@@ -442,7 +442,36 @@ killall emulationstation
 killall -9 pcmanfm xterm &
 
 # Remove os arquivos temporários
+############
 
+
+
+
+# Editar o arquivo es_setings.cfg
+# Caminho do arquivo
+caminho_arquivo="/caminho/para/seu/arquivo/es_settings.cfg"
+
+# Conteúdo XML
+cat << EOF > "$caminho_arquivo"
+<?xml version="1.0"?>
+<config>
+    <bool name="audio.bgmusic" value="false" />
+    <bool name="mrboom.ungroup" value="true" />
+    <bool name="odcommander.ungroup" value="true" />
+    <bool name="prboom.ungroup" value="true" />
+    <bool name="sdlpop.ungroup" value="true" />
+    <string name="CollectionSystemsAuto" value="" />
+    <string name="HiddenSystems" value="firefox;c64;pcengine;nes;snes;gba;mrboom;prboom;sdlpop;odcommander;pygame" />
+    <string name="ThemeSet" value="es-theme-carbon" />
+</config>
+EOF
+
+
+
+
+
+
+############
 startx
 Launcher_off.sh
 one
