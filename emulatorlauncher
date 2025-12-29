@@ -1,5 +1,5 @@
 #!/bin/bash
-
+cp -f /userdata/system/.dev/es_input.cfg /userdata/system/configs/emulationstation/
 SAVE_ROOT="/userdata/saves"
 find "$SAVE_ROOT" -type f -regex '.*\.state[0-9]$' | while read -r file; do
     dir=$(dirname "$file")
@@ -45,6 +45,8 @@ if [ -f /userdata/system/.dev/contador.txt ]; then
     # Se o saldo for 0 ou menor, BLOQUEIA TUDO.
     if [ "$count" -le 0 ]; then
         echo "Saldo zerado ($count). O jogo não será iniciado."
+        Launcher_off.sh
+        mpv /userdata/system/.dev/efeitos_sonoros/insert_coin.wav
         exit 0
     fi
 else
@@ -73,6 +75,9 @@ if [[ "$@" == *"atomiswave"* ]] || \
     # Roda o emulador
     /usr/lib/python3.11/site-packages/configgen/emulatorlauncher.py "$@"
     
+    # Limpeza Botões
+    Launcher_off.sh
+
     # Limpeza ao fechar
     rm -f /userdata/system/.dev/coin
     
@@ -119,12 +124,14 @@ python3.14 /usr/bin/two &
 # FUNÇÕES DE CONTROLE (LOOP DE TEMPO)
 ####################################################################
 
+# Função para matar o emulador quando o tempo se esgota
 kill_emulador() {
     xdotool key alt+F4
     sleep 0.5
     xdotool key alt+F4
 }
 
+# Função que decrementa o tempo de jogo a cada segundo
 decrementa_tempo_jogo() {
     local file_path="/userdata/system/.dev/tempo_jogo.txt"
     local tempo_atual=0
@@ -132,27 +139,36 @@ decrementa_tempo_jogo() {
     sleep 2.5
     
     while true; do
-        if [ ! -f "$file_path" ]; then break; fi
-        
-        tempo_atual=$(cat "$file_path")
-        
-        # Validação se é número
-        if ! [[ "$tempo_atual" =~ ^[0-9]+$ ]]; then sleep 1; continue; fi
-
-        if [ "$tempo_atual" -gt 0 ]; then
-            tempo_atual=$((tempo_atual - 1))
-            echo "$tempo_atual" > "$file_path"
-        else
-            echo "Tempo esgotado!"
-            kill_emulador
-            rm -f "$file_path"
+        # Verifica se o arquivo tempo_jogo.txt ainda existe
+        if [ ! -f "$file_path" ]; then
             break
         fi
-        sleep 1
+
+        # Lê o valor de tempo_jogo.txt a cada segundo
+        tempo_atual=$(cat "$file_path")
+
+        # Valida se o valor lido é um número
+        if ! [[ "$tempo_atual" =~ ^[0-9]+$ ]]; then
+            sleep 1
+            continue
+        fi
+
+        # Se o tempo ainda for maior que 0, decrementa o valor
+        if [ "$tempo_atual" -gt 0 ]; then
+            tempo_atual=$((tempo_atual - 1))
+            echo "$tempo_atual" > "$file_path"  # Atualiza o valor no arquivo
+        else
+            echo "Tempo esgotado!"
+            kill_emulador  # Finaliza o emulador
+            rm -f "$file_path"  # Remove o arquivo de tempo
+            break
+        fi
+
+        sleep 1  # Aguarda 1 segundo antes de fazer a próxima verificação
     done
 }
 
-# Roda o contador
+# Roda o contador de tempo
 decrementa_tempo_jogo &
 
 # Aguarda o jogo fechar (seja por tempo ou pelo usuário)
@@ -162,5 +178,5 @@ wait $game_pid
 if [ -f /userdata/system/.dev/contador.txt.bkp ]; then
     mv /userdata/system/.dev/contador.txt.bkp /userdata/system/.dev/contador.txt
 fi
-
+Launcher_off.sh
 exit 0
