@@ -30,11 +30,11 @@ if [ "$SERIAL" == "$EXPECTED_SERIAL" ] && [ -n "$SERIAL" ]; then
     exit 0
 fi
 
-# Instalar dependências (assume que /usr/share/retroluxxo/dep/py é o Python)
+# Instalar dependências (assume que /usr/bin/python3.14 é o Python)
 # Remova/ajuste se sua plataforma usar python3 diretamente.
-if [ -x /usr/share/retroluxxo/dep/py ]; then
-    /usr/share/retroluxxo/dep/py -m pip install --upgrade pip >/dev/null 2>&1 || true
-    /usr/share/retroluxxo/dep/py -m pip install customtkinter requests >/dev/null 2>&1 || true
+if [ -x /usr/bin/python3.14 ]; then
+    /usr/bin/python3.14 -m pip install --upgrade pip >/dev/null 2>&1 || true
+    /usr/bin/python3.14 -m pip install customtkinter requests >/dev/null 2>&1 || true
 fi
 
 # Executa o bloco Python (interface + rotina de apagar)
