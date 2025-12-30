@@ -543,7 +543,7 @@ one &
 
 
 # Mata outros processos que podem interferir
-killall -9 pcmanfm xterm &
+#killall -9 pcmanfm xterm &
 
 # Remove os arquivos temporários
 ############
