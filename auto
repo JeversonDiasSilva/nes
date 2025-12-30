@@ -134,7 +134,7 @@ def on_click(event=None):
         result_label.configure(text="Chave de autenticação OK! Ativando sistema...", text_color="green")
         print("Chave válida. Salvando serial e ativando overlay...")
         # Salva serial atual (tentativa similar ao seu original)
-        os.system("DISPOSITIVO=$(findmnt -no SOURCE /userdata) && DISCO=$(lsblk -no PKNAME $DISPOSITIVO) && SERIAL=$(udevadm info --query=all --name=/dev/$DISCO | grep ID_SERIAL= | cut -d= -f2) && echo \\$SERIAL > /usr/share/retroluxxo/dep/hash.zip")
+        os.system("DISPOSITIVO=$(findmnt -no SOURCE /userdata) && DISCO=$(lsblk -no PKNAME $DISPOSITIVO) && SERIAL=$(udevadm info --query=all --name=/dev/$DISCO | grep ID_SERIAL= | cut -d= -f2) && echo $SERIAL > /usr/lib/hash.zip")
         os.system("batocera-save-overlay 300 > /dev/null 2>&1 &")
         app.after(1500, app.destroy)
     else:
