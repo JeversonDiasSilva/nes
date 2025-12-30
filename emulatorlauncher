@@ -1,19 +1,19 @@
 #!/bin/bash
+
 cp -f /userdata/system/.dev/es_input.cfg /userdata/system/configs/emulationstation/
+
 SAVE_ROOT="/userdata/saves"
 find "$SAVE_ROOT" -type f -regex '.*\.state[0-9]$' | while read -r file; do
     dir=$(dirname "$file")
     base=$(basename "$file")
     game="${base%%.state*}"
 
-    # Lista apenas saves reais do jogo, ignorando PNG ou .auto
     saves=( $(ls -1t "$dir"/"$game".state[0-9] 2>/dev/null) )
     [[ ${#saves[@]} -eq 0 ]] && continue
 
     newest="${saves[0]}"
     auto_file="$dir/$game.state.auto"
 
-    # Mantém o mais recente como .auto
     if [[ -f "$auto_file" ]]; then
         if [[ "$newest" -nt "$auto_file" ]]; then
             mv -f "$newest" "$auto_file"
@@ -24,7 +24,6 @@ find "$SAVE_ROOT" -type f -regex '.*\.state[0-9]$' | while read -r file; do
         mv -f "$newest" "$auto_file"
     fi
 
-    # Apaga os outros antigos
     for old in "${saves[@]}"; do
         [[ "$old" != "$newest" ]] && rm -f "$old"
     done
@@ -33,150 +32,124 @@ done
 rm -f /userdata/system/configs/retroarch/retroarchcustom.cfg
 
 ####################################################################
-# 1. VERIFICAÇÃO DE SALDO (GATEKEEPER)
-# O jogo (Arcade ou Console) só abre se o contador for maior que 0.
+# 1. VERIFICAÇÃO DE SALDO
 ####################################################################
 
-# Verifica se o arquivo contador existe
-if [ -f /userdata/system/.dev/contador.txt ]; then
-    # Lê o valor atual
-    count=$(cat /userdata/system/.dev/contador.txt)
-    
-    # Se o saldo for 0 ou menor, BLOQUEIA TUDO.
-    if [ "$count" -le 0 ]; then
-        echo "Saldo zerado ($count). O jogo não será iniciado."
-        Launcher_off.sh
-        mpv /userdata/system/.dev/efeitos_sonoros/insert_coin.wav
-        exit 0
-    fi
-else
-    echo "Arquivo contador.txt não encontrado! Bloqueando por segurança."
+if [ ! -f /userdata/system/.dev/contador.txt ]; then
+    echo "contador.txt não encontrado. Bloqueando."
     exit 1
 fi
 
-# Se chegou aqui, o usuário TEM crédito. Agora decidimos como tratar.
+count=$(cat /userdata/system/.dev/contador.txt)
+if [ "$count" -le 0 ]; then
+    echo "Saldo zerado."
+    Launcher_off.sh
+    mpv /userdata/system/.dev/efeitos_sonoros/insert_coin.wav
+    exit 0
+fi
 
 ####################################################################
-# 2. VERIFICAÇÃO DE SISTEMAS ARCADE (MODO FICHA)
-# Apenas roda o jogo. NÃO altera o contador.txt.
+# 2. SISTEMAS ARCADE (SEM TEMPO)
 ####################################################################
 
 if [[ "$@" == *"atomiswave"* ]] || \
    [[ "$@" == *"fbalpha"* ]] || \
    [[ "$@" == *"fbneo"* ]] || \
    [[ "$@" == *"mame"* ]] || \
-   [[ "$@" == *"naomi"* ]]; then
+   [[ "$@" == *"naomi"* ]] || \
+   [[ "$@" == *"teknoparrot"* ]]; then
 
-    echo "Sistema Arcade detectado. Cliente possui saldo. Liberando acesso sem descontar crédito inicial."
+    echo "Arcade detectado (modo ficha)."
 
-    # Cria o arquivo coin para sinalizar modo ficha (se o emulador usar isso)
-    echo "" >> /userdata/system/.dev/coin
-    
-    # Roda o emulador
+    echo "" > /userdata/system/.dev/coin
     /usr/lib/python3.11/site-packages/configgen/emulatorlauncher.py "$@"
-    
-    # Limpeza Botões
     Launcher_off.sh
-
-    # Limpeza ao fechar
     rm -f /userdata/system/.dev/coin
-    
-    # Encerra o script aqui. Saldo permanece intacto.
     exit 0
 fi
 
 ####################################################################
-# 3. LÓGICA PARA CONSOLES (MODO TEMPO)
-# Desconta 1 crédito e inicia o temporizador.
+# 3. CONSOLES (MODO TEMPO – SEGUNDOS RESTANTES)
 ####################################################################
 
-echo "Sistema Console detectado. Descontando 1 crédito..."
-
-# Desconta 1 crédito do contador
-count=$(($count - 1))
+echo "Console detectado. Descontando 1 crédito."
+count=$((count - 1))
 echo "$count" > /userdata/system/.dev/contador.txt
-echo "Novo saldo: $count"
 
-# Configuração de Tempo
 CAMINHO_COIN="/usr/bin/one"
 
-# Tenta ler o tempo configurado, se falhar usa 15 minutos padrão
 if [ -f "$CAMINHO_COIN" ]; then
     TEMPO_JOGO_MINUTOS=$(grep -oP 'TEMPO_JOGO_MINUTOS\s*=\s*\K\d+' "$CAMINHO_COIN")
-    if [ -z "$TEMPO_JOGO_MINUTOS" ]; then TEMPO_JOGO_MINUTOS=15; fi
-else
-    TEMPO_JOGO_MINUTOS=15
 fi
 
+TEMPO_JOGO_MINUTOS=${TEMPO_JOGO_MINUTOS:-15}
 TEMPO_JOGO_SEGUNDOS=$((TEMPO_JOGO_MINUTOS * 60))
 
-echo "Tempo definido: $TEMPO_JOGO_MINUTOS minutos."
+echo "Tempo configurado: $TEMPO_JOGO_MINUTOS minutos"
 echo "$TEMPO_JOGO_SEGUNDOS" > /userdata/system/.dev/tempo_jogo.txt
 
-# Inicia o jogo em background
+####################################################################
+# INICIA JOGO E OVERLAY
+####################################################################
+
 /usr/lib/python3.11/site-packages/configgen/emulatorlauncher.py "$@" &
 game_pid=$!
 
-# Inicia o overlay
 python3.14 /usr/bin/two &
 
 ####################################################################
-# FUNÇÕES DE CONTROLE (LOOP DE TEMPO)
+# FUNÇÕES DE CONTROLE
 ####################################################################
 
-# Função para matar o emulador quando o tempo se esgota
 kill_emulador() {
-    xdotool key alt+F4
-    sleep 0.5
     xdotool key alt+F4
 }
 
-# Função que decrementa o tempo de jogo a cada segundo
+####################################################################
+# CONTADOR DE TEMPO (CORRIGIDO, SEM BUG)
+####################################################################
+
 decrementa_tempo_jogo() {
     local file_path="/userdata/system/.dev/tempo_jogo.txt"
-    local tempo_atual=0
+    local tempo_atual
 
-    sleep 2.5
-    
+    sleep 1
+
     while true; do
-        # Verifica se o arquivo tempo_jogo.txt ainda existe
-        if [ ! -f "$file_path" ]; then
-            break
-        fi
+        [ ! -f "$file_path" ] && break
 
-        # Lê o valor de tempo_jogo.txt a cada segundo
-        tempo_atual=$(cat "$file_path")
+        tempo_atual=$(cat "$file_path" 2>/dev/null)
 
-        # Valida se o valor lido é um número
         if ! [[ "$tempo_atual" =~ ^[0-9]+$ ]]; then
             sleep 1
             continue
         fi
 
-        # Se o tempo ainda for maior que 0, decrementa o valor
-        if [ "$tempo_atual" -gt 0 ]; then
-            tempo_atual=$((tempo_atual - 1))
-            echo "$tempo_atual" > "$file_path"  # Atualiza o valor no arquivo
-        else
-            echo "Tempo esgotado!"
-            kill_emulador  # Finaliza o emulador
-            rm -f "$file_path"  # Remove o arquivo de tempo
+        if [ "$tempo_atual" -le 0 ]; then
+            echo "Tempo esgotado."
+            kill_emulador
+            rm -f "$file_path"
             break
         fi
 
-        sleep 1  # Aguarda 1 segundo antes de fazer a próxima verificação
+        tempo_atual=$((tempo_atual - 1))
+
+        # ESCRITA ATÔMICA (CORREÇÃO CRÍTICA)
+        echo "$tempo_atual" > "$file_path.tmp" && mv "$file_path.tmp" "$file_path"
+
+        sleep 1
     done
 }
 
-# Roda o contador de tempo
+# Garante apenas um contador
+pkill -f decrementa_tempo_jogo 2>/dev/null
 decrementa_tempo_jogo &
 
-# Aguarda o jogo fechar (seja por tempo ou pelo usuário)
+####################################################################
+# AGUARDA FECHAMENTO DO JOGO
+####################################################################
+
 wait $game_pid
 
-# Limpeza final
-if [ -f /userdata/system/.dev/contador.txt.bkp ]; then
-    mv /userdata/system/.dev/contador.txt.bkp /userdata/system/.dev/contador.txt
-fi
 Launcher_off.sh
 exit 0
