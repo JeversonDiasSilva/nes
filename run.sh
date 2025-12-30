@@ -186,7 +186,7 @@ if [ "$VERSAO" -eq 40 ]; then
     # ---------------------------------------------------------
     # PARTE B: libretroRetroarchCustom.py (O Arquivo Gerador)
     # ---------------------------------------------------------
-    echo "[Custom] Aplicando Hotkey e removendo Fonte..."
+    #echo "[Custom] Aplicando Hotkey e removendo Fonte..."
     # Hotkey null
     sed -i "/'input_enable_hotkey'/ s/\"shift\"/\"null\"/" "$ARQUIVO_CUSTOM"
     # Fonte de video false (Texto OSD)
@@ -205,11 +205,11 @@ if [ "$VERSAO" -eq 40 ]; then
         INSERT=$4  # A linha exata a ser inserida
 
         if grep -q "$CHECK" "$FILE"; then
-            echo "  -> Configuração '$CHECK' já existe. Pulando injeção."
+            #echo "  -> Configuração '$CHECK' já existe. Pulando injeção."
             # Se já existe, garante que está como false
             sed -i "/'$CHECK'/ s/\"true\"/\"false\"/" "$FILE"
         else
-            echo "  -> Injetando '$CHECK'..."
+            #echo "  -> Injetando '$CHECK'..."
             # Insere APÓS a linha do texto âncora
             sed -i "/$SEARCH/a \    $INSERT" "$FILE"
         fi
@@ -239,11 +239,11 @@ if [ "$VERSAO" -eq 40 ]; then
         "notification_show_config_override_load" \
         "retroarchSettings.save('notification_show_config_override_load', '\"false\"')"
 
-    echo "--- Verificação Final ---"
+    #echo "--- Verificação Final ---"
     grep "menu_enable_widgets" "$ARQUIVO_CUSTOM"
     grep "notification_show_save_state" "$ARQUIVO_CUSTOM"
 
-    echo "--- Concluído! Reinicie o jogo. ---"
+    #echo "--- Concluído! Reinicie o jogo. ---"
 
 elif [ "$VERSAO" -eq 42 ]; then
     # Código para a versão 42
@@ -328,11 +328,11 @@ elif [ "$VERSAO" -eq 42 ]; then
         "notification_show_config_override_load" \
         "retroarchSettings.save('notification_show_config_override_load', '\"false\"')"
 
-    echo "--- Verificação Final ---"
+    #echo "--- Verificação Final ---"
     grep "menu_enable_widgets" "$ARQUIVO_CUSTOM"
     grep "notification_show_save_state" "$ARQUIVO_CUSTOM"
 
-    echo "--- Concluído! Reinicie o jogo. ---"
+    #echo "--- Concluído! Reinicie o jogo. ---"
 else
     echo "Versão não suportada: $VERSAO"
 fi
@@ -440,7 +440,7 @@ cp -f /usr/share/batocera/datainit/system/configs/emulationstation/es_input.cfg 
 ######
 ############# Configuração dos games mame
 
-cat <<'EOF' >> /usr/share/batocera/datainit/system/batocera.conf
+cat <<'EOF' >> /userdata/system/batocera.conf
 system.cpu.governor=schedutil
 mame.tdp=100.000000
 mame.core=mame
@@ -537,7 +537,7 @@ sleep 10
 # Mata o processo do EmulationStation
 killall emulationstation &&
 startx &
-one &
+one
 
 
 
