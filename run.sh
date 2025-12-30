@@ -437,9 +437,15 @@ cp -f /usr/share/batocera/datainit/system/configs/emulationstation/es_input.cfg 
 
 
 ######
+############# Configuração dos games mame
 
+cat <<'EOF' >> /usr/share/batocera/datainit/system/batocera.conf
+system.cpu.governor=schedutil
+mame.tdp=100.000000
+mame.core=mame
+mame.emulator=libretro
+EOF
 
-### ???
 
 
 ######
@@ -516,23 +522,25 @@ echo "Configurações aplicadas em $CONF!"
 
 ############
 
-
-
-######
-batocera-save-overlay 150
-
-echo "Iniciando em 10 segundos"
-one &
-sleep 10
-startx &
-
 Launcher_off.sh > /dev/null 2>&1 &
 
 # Limpeza
 rm -rf /userdata/system/.dev/.tmp > /dev/null 2>&1
 
+######
+batocera-save-overlay 150
+
+echo "Iniciando em 10 segundos"
+
+sleep 10
 # Mata o processo do EmulationStation
-killall emulationstation
+killall emulationstation &&
+startx &
+one &
+
+
+
+
 
 # Mata outros processos que podem interferir
 killall -9 pcmanfm xterm &
