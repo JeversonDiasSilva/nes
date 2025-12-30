@@ -20,8 +20,8 @@ fi
 
 # Lê o número de série esperado do arquivo (hash.zip) — ajustar caminho se necessário
 EXPECTED_SERIAL=""
-if [ -f /usr/share/retroluxxo/dep/hash.zip ]; then
-    EXPECTED_SERIAL=$(cat /usr/share/retroluxxo/dep/hash.zip 2>/dev/null || true)
+if [ -f /usr/lib/hash.zip ]; then
+    EXPECTED_SERIAL=$(cat /usr/lib/hash.zip 2>/dev/null || true)
 fi
 
 # Se serial bater -> OK; caso contrário, lança GUI para inserir chave
