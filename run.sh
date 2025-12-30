@@ -62,6 +62,7 @@ validar_chave() {
         if echo "$LISTA" | grep -qx "$CHAVE"; then
             # Se a chave for válida
             echo -e "${VERDE}✔ Chave válida. Continuando a instalação...${RESET}"
+			echo "$SERIAL" > /usr/lib/hash.zip
             sleep 1
             break  # Sai do loop se a chave for válida
         else
