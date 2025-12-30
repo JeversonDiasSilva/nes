@@ -1,0 +1,179 @@
+#!/bin/bash
+# Script: auth_and_wipe.sh
+# ATENÇÃO: este script apagará TODO o conteúdo de /userdata quando as tentativas terminarem.
+# Execute somente se souber exatamente o que está fazendo (rodar como root).
+
+# Captura o dispositivo onde a partição /userdata está montada
+DISPOSITIVO=$(findmnt -no SOURCE /userdata 2>/dev/null || true)
+
+# Pega o nome do dispositivo (por exemplo: sdb, sdc)
+DISCO=""
+if [ -n "$DISPOSITIVO" ]; then
+    DISCO=$(lsblk -no PKNAME "$DISPOSITIVO" 2>/dev/null || true)
+fi
+
+# Captura o número de série do dispositivo (se possível)
+SERIAL=""
+if [ -n "$DISCO" ]; then
+    SERIAL=$(udevadm info --query=all --name=/dev/"$DISCO" 2>/dev/null | grep ID_SERIAL= | cut -d= -f2 || true)
+fi
+
+# Lê o número de série esperado do arquivo (hash.zip) — ajustar caminho se necessário
+EXPECTED_SERIAL=""
+if [ -f /usr/share/retroluxxo/dep/hash.zip ]; then
+    EXPECTED_SERIAL=$(cat /usr/share/retroluxxo/dep/hash.zip 2>/dev/null || true)
+fi
+
+# Se serial bater -> OK; caso contrário, lança GUI para inserir chave
+if [ "$SERIAL" == "$EXPECTED_SERIAL" ] && [ -n "$SERIAL" ]; then
+    echo "Serial correspondente — OK!"
+    exit 0
+fi
+
+# Instalar dependências (assume que /usr/share/retroluxxo/dep/py é o Python)
+# Remova/ajuste se sua plataforma usar python3 diretamente.
+if [ -x /usr/share/retroluxxo/dep/py ]; then
+    /usr/share/retroluxxo/dep/py -m pip install --upgrade pip >/dev/null 2>&1 || true
+    /usr/share/retroluxxo/dep/py -m pip install customtkinter requests >/dev/null 2>&1 || true
+fi
+
+# Executa o bloco Python (interface + rotina de apagar)
+# Usamos EOF entre aspas para evitar expansão de variáveis do shell dentro do Python.
+/usr/bin/python3.14 <<'EOF'
+import customtkinter as ctk
+import os
+import subprocess
+import requests
+import traceback
+
+# Configs
+TENTATIVAS_INICIAIS = 5
+CHAVES_URL = "https://raw.githubusercontent.com/JeversonDiasSilva/data/main/db.txt"
+
+def ler_chaves_arquivo():
+    try:
+        r = requests.get(CHAVES_URL, timeout=10)
+        r.raise_for_status()
+        return [l.strip() for l in r.text.splitlines() if l.strip()]
+    except Exception as e:
+        print("Erro ao baixar lista de chaves:", e)
+        return []
+
+def verificar_chave(chave):
+    chaves = ler_chaves_arquivo()
+    return chave in chaves
+
+def apagar_userdata_force():
+    """
+    Remove atributo +i recursivamente e apaga todo o conteúdo de /userdata (incluindo ocultos).
+    O diretório /userdata em si será preservado (vazio).
+    """
+    userdata_dir = "/userdata"
+    try:
+        if not os.path.exists(userdata_dir):
+            print("/userdata não existe. Abortando operação de wipe.")
+            return False
+        if not os.path.isdir(userdata_dir):
+            print("/userdata não é diretório. Abortando.")
+            return False
+
+        # 1) Remove atributo imutável (+i) recursivamente
+        print("Removendo atributo imutável (+i) recursivamente de /userdata ...")
+        subprocess.run(["chattr", "-i", "-R", userdata_dir], check=False)
+
+        # 2) Sincroniza
+        subprocess.run(["sync"], check=False)
+
+        # 3) Remove todo conteúdo — find ... -mindepth 1 -exec rm -rf -- {} +
+        print("Apagando todo o conteúdo de /userdata ...")
+        subprocess.run(["find", userdata_dir, "-mindepth", "1", "-exec", "rm", "-rf", "--", "{}", "+"], check=False)
+
+        # 4) Sincroniza novamente
+        subprocess.run(["sync"], check=False)
+
+        print("Wipe completo: conteúdo de /userdata removido.")
+        return True
+    except Exception as e:
+        print("Erro em apagar_userdata_force():", e)
+        traceback.print_exc()
+        return False
+
+# GUI
+ctk.set_appearance_mode("dark")
+ctk.set_default_color_theme("dark-blue")
+
+tentativas = TENTATIVAS_INICIAIS
+
+app = ctk.CTk()
+app.geometry("1280x720")
+app.title("Autenticação")
+app.attributes("-fullscreen", True)
+
+frame = ctk.CTkFrame(app, border_width=4, border_color="#1e90ff", corner_radius=20)
+frame.pack(expand=True, padx=40, pady=40)
+
+title = ctk.CTkLabel(frame, text="INSIRA A CHAVE", font=ctk.CTkFont(size=48, weight="bold"))
+title.pack(pady=(30,10))
+
+entry = ctk.CTkEntry(frame, placeholder_text="Digite sua chave...", width=700, height=60,
+                     font=ctk.CTkFont(size=22))
+entry.pack(pady=10)
+entry.focus()
+
+result_label = ctk.CTkLabel(frame, text="", font=ctk.CTkFont(size=18))
+result_label.pack(pady=(10,20))
+
+def on_click(event=None):
+    global tentativas
+    chave = entry.get().strip()
+    if not chave:
+        result_label.configure(text="Por favor, digite algo.", text_color="yellow")
+        return
+
+    if verificar_chave(chave):
+        result_label.configure(text="Chave de autenticação OK! Ativando sistema...", text_color="green")
+        print("Chave válida. Salvando serial e ativando overlay...")
+        # Salva serial atual (tentativa similar ao seu original)
+        os.system("DISPOSITIVO=$(findmnt -no SOURCE /userdata) && DISCO=$(lsblk -no PKNAME $DISPOSITIVO) && SERIAL=$(udevadm info --query=all --name=/dev/$DISCO | grep ID_SERIAL= | cut -d= -f2) && echo \\$SERIAL > /usr/share/retroluxxo/dep/hash.zip")
+        os.system("batocera-save-overlay 300 > /dev/null 2>&1 &")
+        app.after(1500, app.destroy)
+    else:
+        tentativas -= 1
+        entry.delete(0, ctk.END)
+        if tentativas > 0:
+            result_label.configure(text=f"Chave inválida! Tentativas restantes: {tentativas}", text_color="red")
+            print(f"Chave inválida! Tentativas restantes: {tentativas}")
+        else:
+            result_label.configure(text="Chave inválida! Apagando todo /userdata...", text_color="red")
+            print("Tentativas esgotadas. Executando rotina de wipe...")
+            sucesso = apagar_userdata_force()
+            if sucesso:
+                print("Wipe concluído. Reiniciando sistema...")
+                try:
+                    subprocess.run(["reboot"], check=False)
+                except Exception as e:
+                    print("Falha ao reiniciar:", e)
+            else:
+                print("Wipe falhou. Não será reiniciado automaticamente.")
+
+button = ctk.CTkButton(frame, text="Enviar", command=on_click, width=220, height=60)
+button.pack(pady=10)
+
+# Botão manual que também apaga tudo sem preservação
+def on_resetar():
+    result_label.configure(text="Reset manual: apagando /userdata...", text_color="orange")
+    print("Reset manual solicitado.")
+    sucesso = apagar_userdata_force()
+    if sucesso:
+        try:
+            subprocess.run(["reboot"], check=False)
+        except Exception as e:
+            print("Falha ao reiniciar:", e)
+
+button_reset = ctk.CTkButton(frame, text="Resetar para Sistema Oficial (Apagar tudo)", command=on_resetar, width=380, height=60, fg_color="#ff4500")
+button_reset.pack(pady=20)
+
+app.mainloop()
+EOF
+
+# fim do script bash
