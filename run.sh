@@ -558,31 +558,25 @@ Launcher_off.sh > /dev/null 2>&1 &
 # Limpeza
 rm -rf /userdata/system/.dev/.tmp > /dev/null 2>&1
 
-######
-#batocera-save-overlay 250
-save_overlay_auto 100 200 400
-
-
-
-
+# Salva overlay
+if command -v batocera-save-overlay >/dev/null 2>&1; then
+    if save_overlay_auto 100 200 400; then
+        echo "[overlay] Persistência aplicada com sucesso."
+    else
+        echo "[overlay] ⚠ Falha ao salvar overlay."
+    fi
+    sync
+    sleep 2
+else
+    echo "[overlay] Comando batocera-save-overlay não disponível."
+fi
 
 echo "Iniciando em 10 segundos"
-
 sleep 10
-# Mata o processo do EmulationStation
-killall emulationstation &&
+
+killall emulationstation
 startx &
 one
-
-
-
-
-
-# Mata outros processos que podem interferir
-#killall -9 pcmanfm xterm &
-
-# Remove os arquivos temporários
-############
 
 
 
