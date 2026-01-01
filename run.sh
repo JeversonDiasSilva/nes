@@ -13,6 +13,36 @@
 ############################################
 ############################################
 
+
+############
+
+
+
+
+save_overlay_auto() {
+    local SIZES=("$@")
+    [ ${#SIZES[@]} -eq 0 ] && SIZES=(150 250 350)
+
+    if batocera-save-overlay; then
+        return 0
+    fi
+
+    for SIZE in "${SIZES[@]}"; do
+        if batocera-save-overlay "$SIZE"; then
+            return 0
+        fi
+    done
+
+    return 1
+}
+
+
+
+
+
+
+############
+
 ###
 
 
@@ -529,7 +559,12 @@ Launcher_off.sh > /dev/null 2>&1 &
 rm -rf /userdata/system/.dev/.tmp > /dev/null 2>&1
 
 ######
-batocera-save-overlay 150
+#batocera-save-overlay 250
+save_overlay_auto 100 200 400
+
+
+
+
 
 echo "Iniciando em 10 segundos"
 
