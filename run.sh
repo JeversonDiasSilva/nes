@@ -560,22 +560,28 @@ echo "Configurações aplicadas em $CONF!"
 
 
 ############
-
+# Executa o script em segundo plano
 Launcher_off.sh > /dev/null 2>&1 &
 
 # Limpeza
 rm -rf /userdata/system/.dev/.tmp > /dev/null 2>&1
 
-# Salva overlay
+# Salva overlay usando sua nova função robusta
 save_overlay_auto
 
-echo "Iniciando em 10 segundos"
+echo "Configurações salvas. Iniciando interface em 10 segundos..."
 sleep 10
 
+# Sincronia final de segurança
+sync
+
+# Mata o ES e sobe a nova interface
 killall emulationstation
+sleep 2
 startx &
 one &
 
+# Fim do script
 
 
 
