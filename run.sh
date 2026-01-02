@@ -207,7 +207,7 @@ if [ "$VERSAO" -eq 40 ]; then
     echo "--- Script V5: Bloqueio Total de Notificações ---"
 
     # 1. Permite escrita
-    mount -o remount,rw /
+    # mount -o remount,rw /
 
     # 2. Backups (Se não existirem)
     [ ! -f "$ARQUIVO_CONFIG.bak" ] && cp "$ARQUIVO_CONFIG" "$ARQUIVO_CONFIG.bak"
