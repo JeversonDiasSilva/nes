@@ -288,7 +288,7 @@ elif [ "$VERSAO" -eq 42 ]; then
     # Caminhos dos arquivos
 	cp /usr/share/emulationstation/es_input.cfg system/.dev/
     cp /usr/share/emulationstation/es_input.cfg /userdata/system/configs/emulationstation
-    mv/usr/bin/emulatorlauncher /usr/bin/es
+    mv /usr/bin/emulatorlauncher /usr/bin/es
 	mv -f $dir/emulatorlauncher-42 /usr/bin
     ARQUIVO_CONFIG="/usr/lib/python3.12/site-packages/configgen/generators/libretro/libretroConfig.py"
     ARQUIVO_CUSTOM="/usr/lib/python3.12/site-packages/configgen/generators/libretro/libretroRetroarchCustom.py"
