@@ -566,7 +566,8 @@ sleep 10
 
 killall emulationstation
 startx &
-one
+one &
+batocera-save-overlay 250
 
 
 
