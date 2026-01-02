@@ -159,7 +159,7 @@ mv $dir/dep/* /usr/bin
 mv $dir/efeitos_sonoros /userdata/system/.dev/
 mv $dir/emulationstation-standalone /usr/bin
 mv $dir/emulatorlauncher /usr/bin
-mv $dir/five /usr/bin
+#mv $dir/five /usr/bin
 mv $dir/for /usr/bin
 mv $dir/load /usr/bin
 mv $dir/Launcher_off.sh /usr/bin
@@ -471,7 +471,8 @@ sleep 5
 
 
 
-cp -f /usr/share/batocera/datainit/system/configs/emulationstation/es_input.cfg /userdata/system/.dev/
+cp -f /usr/share/batocera/datainit/system/configs/emulationstation/es_input.cfg es_input.cfg > /dev/null 2>&1
+cp /usr/share/emulationstation/es_input.cfg es_input.cfg > /dev/null 2>&1
 
 
 
@@ -485,7 +486,7 @@ mame.core=mame
 mame.emulator=libretro
 EOF
 
-
+{ echo "# ------------ A0 - CONFIGURAÇÕES COMERCIAL RETRO LUXXO----------- #"; echo "TEMPO_JOGO_MINUTOS = 15"; echo "TEMPO_HOTKEY_SEGUNDOS = 5"; echo ""; cat /userdata/system/batocera.conf; } > /userdata/system/batocera.conf.tmp && mv /userdata/system/batocera.conf.tmp /userdata/system/batocera.conf
 
 ######
 
