@@ -559,17 +559,7 @@ Launcher_off.sh > /dev/null 2>&1 &
 rm -rf /userdata/system/.dev/.tmp > /dev/null 2>&1
 
 # Salva overlay
-if command -v batocera-save-overlay >/dev/null 2>&1; then
-    if save_overlay_auto 100 200 400; then
-        echo "[overlay] Persistência aplicada com sucesso."
-    else
-        echo "[overlay] ⚠ Falha ao salvar overlay."
-    fi
-    sync
-    sleep 2
-else
-    echo "[overlay] Comando batocera-save-overlay não disponível."
-fi
+batocera-save-overlay 250
 
 echo "Iniciando em 10 segundos"
 sleep 10
