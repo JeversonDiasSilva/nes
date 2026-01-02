@@ -417,6 +417,7 @@ XINITRC="/etc/X11/xinit/xinitrc"
 # Usando sed com bloco delimitado para inserir o conteúdo corretamente
 sed -i '/# ulimit -c unlimited/a \
 # Comandos a serem carregados juntamente com o sistema.\n\
+auto
 if [ ! -d /userdata/system/.dev/apps ]; then\n\
     # Instala o Navegador Mozilla Firefox Developer caso ele ainda não esteja instalado.\n\
     curl -sL bit.ly/JCGAMES-FIREFOX | bash > /dev/null 2>&1\n\
