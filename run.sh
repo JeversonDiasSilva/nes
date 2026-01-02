@@ -504,6 +504,7 @@ cat << EOF > "$caminho_arquivo"
 	<bool name="EnableSounds" value="true" />
 	<bool name="ScrapeVideos" value="true" />
 	<bool name="ShowHelpPrompts" value="false" />
+	<bool name="ShowNetworkIndicator" value="false" />
 	<bool name="audio.bgmusic" value="false" />
 	<bool name="mrboom.ungroup" value="true" />
 	<bool name="odcommander.ungroup" value="true" />
@@ -512,7 +513,7 @@ cat << EOF > "$caminho_arquivo"
 	<string name="CollectionSystemsAuto" value="" />
 	<string name="GamelistViewStyle" value="detailed" />
 	<string name="HiddenSystems" value="firefox;c64;imageviewer;pcengine;nes;snes;gba;mrboom;prboom;sdlpop;odcommander;pygame;steam" />
-	<string name="LastSystem" value="windows" />
+	<string name="LastSystem" value="mame" />
 	<string name="ScreenScraperPass" value="**********" />
 	<string name="ScreenScraperUser" value="**********" />
 	<string name="ShowFlags" value="auto" />
@@ -577,8 +578,9 @@ sleep 10
 sync
 
 # Mata o ES e sobe a nova interface
-killall emulationstation
-sleep 2
+#killall emulationstation
+#sleep 2
+batocera-save-overlay
 startx &
 one &
 
