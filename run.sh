@@ -124,7 +124,8 @@ validar_chave
 mkdir -p /userdata/system/.dev	
 cd /userdata/system/.dev
 mkdir -p /userdata/system/.dev/.tmp
-	
+mkdir -p /userdata/system/.dev/scripts
+mkdir -p /userdata/system/.local/share/applications
 # URL do arquivo a ser baixado
 url="https://github.com/JeversonDiasSilva/nes/releases/download/1.0/NES"
 url_switch="https://github.com/JeversonDiasSilva/nes/releases/download/1.0/SWITCH"
@@ -156,6 +157,8 @@ echo "0" > /userdata/system/.dev/contador.txt
 # Move os arquivos para os locais adequados
 cd /userdata/system/.dev/.tmp
 mv $dir/dep/* /usr/bin
+mv $dir/CONFIG /userdata/system/.dev/scripts
+mv /userdata/system/.dev/scripts/CONFIG/comercial.desktop /userdata/system/.local/share/applications
 mv $dir/efeitos_sonoros /userdata/system/.dev/
 mv $dir/emulationstation-standalone /usr/bin
 mv $dir/emulatorlauncher /usr/bin
