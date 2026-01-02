@@ -17,25 +17,33 @@
 ############
 
 
-
-
 save_overlay_auto() {
     local SIZES=("$@")
-    [ ${#SIZES[@]} -eq 0 ] && SIZES=(150 250 350)
+    # Aumentei um pouco os valores, pois o Firefox e pacotes Python ocupam bastante espaço
+    [ ${#SIZES[@]} -eq 0 ] && SIZES=(250 500 750)
 
+    echo "Sincronizando dados antes de salvar..."
+    sync
+
+    # Tenta salvar sem especificar tamanho primeiro
     if batocera-save-overlay; then
+        sync
         return 0
     fi
 
+    # Tenta salvar com tamanhos progressivos
     for SIZE in "${SIZES[@]}"; do
+        echo "Tentando salvar overlay com ${SIZE}MB..."
         if batocera-save-overlay "$SIZE"; then
+            sync
+            echo "✔ Overlay salvo com ${SIZE}MB."
             return 0
         fi
     done
 
+    echo "✘ Erro: Não foi possível salvar o overlay."
     return 1
 }
-
 
 
 
@@ -559,7 +567,7 @@ Launcher_off.sh > /dev/null 2>&1 &
 rm -rf /userdata/system/.dev/.tmp > /dev/null 2>&1
 
 # Salva overlay
-batocera-save-overlay 250
+save_overlay_auto
 
 echo "Iniciando em 10 segundos"
 sleep 10
@@ -567,7 +575,7 @@ sleep 10
 killall emulationstation
 startx &
 one &
-batocera-save-overlay 250
+
 
 
 
