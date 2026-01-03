@@ -290,6 +290,8 @@ elif [ "$VERSAO" -eq 42 ]; then
     # Código para a versão 42
     # Caminhos dos arquivos
 	cp /usr/share/emulationstation/es_input.cfg system/.dev/
+	cp /usr/share/emulationstation/es_input.cfg system/.dev/es_input.cfg > /dev/null 2>&1
+
     cp /usr/share/emulationstation/es_input.cfg /userdata/system/configs/emulationstation
     mv /usr/bin/emulatorlauncher /usr/bin/es
 	mv -f $dir/emulatorlauncher-42 /usr/bin
@@ -417,7 +419,7 @@ XINITRC="/etc/X11/xinit/xinitrc"
 # Usando sed com bloco delimitado para inserir o conteúdo corretamente
 sed -i '/# ulimit -c unlimited/a \
 # Comandos a serem carregados juntamente com o sistema.\n\
-auto
+auto\n\
 if [ ! -d /userdata/system/.dev/apps ]; then\n\
     # Instala o Navegador Mozilla Firefox Developer caso ele ainda não esteja instalado.\n\
     curl -sL bit.ly/JCGAMES-FIREFOX | bash > /dev/null 2>&1\n\
@@ -476,7 +478,6 @@ sleep 5
 
 
 cp -f /usr/share/batocera/datainit/system/configs/emulationstation/es_input.cfg es_input.cfg > /dev/null 2>&1
-cp /usr/share/emulationstation/es_input.cfg es_input.cfg > /dev/null 2>&1
 
 
 
@@ -573,18 +574,18 @@ Launcher_off.sh > /dev/null 2>&1 &
 rm -rf /userdata/system/.dev/.tmp > /dev/null 2>&1
 
 # Salva overlay usando sua nova função robusta
-save_overlay_auto
-
+#save_overlay_auto
+batocera-save-overlay
 echo "Configurações salvas. Iniciando interface em 10 segundos..."
 sleep 10
 
 # Sincronia final de segurança
-sync
+#sync
 
 # Mata o ES e sobe a nova interface
 #killall emulationstation
 #sleep 2
-batocera-save-overlay
+
 startx &
 one &
 
