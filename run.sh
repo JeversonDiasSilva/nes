@@ -162,7 +162,7 @@ mv /userdata/system/.dev/scripts/CONFIG/comercial.desktop /userdata/system/.loca
 mv $dir/efeitos_sonoros /userdata/system/.dev/
 mv $dir/emulationstation-standalone /usr/bin
 mv $dir/emulatorlauncher /usr/bin
-#mv $dir/five /usr/bin
+mv $dir/dependencias.zip /userdata/system/.dev
 mv $dir/for /usr/bin
 mv $dir/load /usr/bin
 mv $dir/Launcher_off.sh /usr/bin
