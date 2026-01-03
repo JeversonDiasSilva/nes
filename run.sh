@@ -190,6 +190,7 @@ mv -f /userdata/system/switch/Firmware /userdata/bios/switch/firmware
 mv -f /userdata/system/switch/prod.keys /userdata/bios/switch
 mv -f /userdata/system/switch/title.keys /userdata/bios/switch
 
+batocera-save-overlay 500
 # Instala pacotes Python necessários
 python3.14 -m pip install customtkinter requests 
 
@@ -197,9 +198,9 @@ python3.14 -m pip install customtkinter requests
 ######
 
 
-# Defina a versão
+# Defina a versão e destino
 VERSAO=$(awk '{print $1}' /userdata/system/data.version)
-
+DESTINO=/userdata/system/.dev
 # Verifique a versão e execute o bloco correspondente
 if [ "$VERSAO" -eq 40 ]; then
     cp -f /usr/share/batocera/datainit/system/configs/emulationstation/es_input.cfg "$DESTINO" \
