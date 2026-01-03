@@ -470,8 +470,7 @@ configs_iniciais() {
 
 # Chama as configurações iniciais
 configs_iniciais
-echo "reiniciando"
-sleep 5
+
 
 ######################################################
 
@@ -568,9 +567,6 @@ rm -rf /userdata/system/.dev/.tmp > /dev/null 2>&1
 
 # Salva overlay usando sua nova função robusta
 save_overlay_auto
-
-echo "Configurações salvas. Iniciando interface em 10 segundos..."
-sleep 10
 
 # Sincronia final de segurança
 #sync
