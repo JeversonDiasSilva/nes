@@ -202,9 +202,8 @@ VERSAO=$(awk '{print $1}' /userdata/system/data.version)
 
 # Verifique a versão e execute o bloco correspondente
 if [ "$VERSAO" -eq 40 ]; then
-    # Código para a versão 40
-    # Caminhos dos arquivos
-	cp -f /usr/share/batocera/datainit/system/configs/emulationstation/es_input.cfg es_input.cfg > /dev/null 2>&1
+    cp -f /usr/share/batocera/datainit/system/configs/emulationstation/es_input.cfg "$DESTINO" \
+    > /dev/null 2>&1
     ARQUIVO_CONFIG="/usr/lib/python3.11/site-packages/configgen/generators/libretro/libretroConfig.py"
     ARQUIVO_CUSTOM="/usr/lib/python3.11/site-packages/configgen/generators/libretro/libretroRetroarchCustom.py"
 
@@ -288,12 +287,8 @@ if [ "$VERSAO" -eq 40 ]; then
     #echo "--- Concluído! Reinicie o jogo. ---"
 
 elif [ "$VERSAO" -eq 42 ]; then
-    # Código para a versão 42
-    # Caminhos dos arquivos
-	#cp /usr/share/emulationstation/es_input.cfg system/.dev/
-	#cp /usr/share/emulationstation/es_input.cfg system/.dev/es_input.cfg > /dev/null 2>&1
-
-    #cp /usr/share/emulationstation/es_input.cfg /userdata/system/configs/emulationstation
+    cp -f /usr/share/emulationstation/es_input.cfg "$DESTINO" \
+    > /dev/null 2>&1
     mv /usr/bin/emulatorlauncher /usr/bin/es
 	mv -f $dir/emulatorlauncher-42 /usr/bin
     ARQUIVO_CONFIG="/usr/lib/python3.12/site-packages/configgen/generators/libretro/libretroConfig.py"
@@ -445,6 +440,7 @@ fi\n' "$XINITRC"
 
 
 ######
+######################################################
 
 
 # Funções para configurações iniciais
@@ -476,13 +472,8 @@ configs_iniciais
 echo "reiniciando"
 sleep 5
 
+######################################################
 
-
-cp -f /usr/share/batocera/datainit/system/configs/emulationstation/es_input.cfg es_input.cfg > /dev/null 2>&1
-
-
-
-######
 ############# Configuração dos games mame
 
 cat <<'EOF' >> /userdata/system/batocera.conf
