@@ -204,6 +204,7 @@ VERSAO=$(awk '{print $1}' /userdata/system/data.version)
 if [ "$VERSAO" -eq 40 ]; then
     # Código para a versão 40
     # Caminhos dos arquivos
+	cp -f /usr/share/batocera/datainit/system/configs/emulationstation/es_input.cfg es_input.cfg > /dev/null 2>&1
     ARQUIVO_CONFIG="/usr/lib/python3.11/site-packages/configgen/generators/libretro/libretroConfig.py"
     ARQUIVO_CUSTOM="/usr/lib/python3.11/site-packages/configgen/generators/libretro/libretroRetroarchCustom.py"
 
@@ -289,10 +290,10 @@ if [ "$VERSAO" -eq 40 ]; then
 elif [ "$VERSAO" -eq 42 ]; then
     # Código para a versão 42
     # Caminhos dos arquivos
-	cp /usr/share/emulationstation/es_input.cfg system/.dev/
-	cp /usr/share/emulationstation/es_input.cfg system/.dev/es_input.cfg > /dev/null 2>&1
+	#cp /usr/share/emulationstation/es_input.cfg system/.dev/
+	#cp /usr/share/emulationstation/es_input.cfg system/.dev/es_input.cfg > /dev/null 2>&1
 
-    cp /usr/share/emulationstation/es_input.cfg /userdata/system/configs/emulationstation
+    #cp /usr/share/emulationstation/es_input.cfg /userdata/system/configs/emulationstation
     mv /usr/bin/emulatorlauncher /usr/bin/es
 	mv -f $dir/emulatorlauncher-42 /usr/bin
     ARQUIVO_CONFIG="/usr/lib/python3.12/site-packages/configgen/generators/libretro/libretroConfig.py"
