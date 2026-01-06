@@ -1,0 +1,569 @@
+#!/bin/bash
+# Curitiba 05 de Janeiro de 2026.
+# Editor: Jeverson Dias da Silva   ///@JCGAMESCLASSICOS...
+
+
+############################################
+############################################
+############################################
+#                                          #
+#             AUTENTICAÇÂO AQUI            #
+#                                          #
+############################################
+############################################
+############################################
+
+# Estilização visual
+clear
+#echo -e "\n\n\n\n"
+
+ROXO="\033[1;35m"
+VERDE="\033[1;92m"
+AZUL="\033[1;34m"
+AMARELO="\033[1;33m"
+VERMELHO="\033[1;31m"
+RESET="\033[0m"
+BOLD="\033[1m"
+UNDERLINE="\033[4m"
+
+
+DISPOSITIVO=$(findmnt -no SOURCE /userdata)
+DISCO=$(lsblk -no PKNAME $DISPOSITIVO)
+SERIAL=$(udevadm info --query=all --name=/dev/$DISCO | grep ID_SERIAL= | cut -d= -f2)
+
+#echo "$SERIAL" > /usr/share/retroluxxo/dep/hash.zip
+
+
+
+echo -e "${ROXO}${BOLD}╔══════════════════════════════════════════════════════════╗${RESET}"
+echo -e "${ROXO}${BOLD}  INSTALAÇÃO DO "PATCH DE SCRIPTS"  ${RESET} ${VERDE}PANDORA LINUX v2.0${RESET}"
+echo -e "${ROXO}${BOLD}  V40 - JEVERTON DIAS DA SILVA - 05 SETEMBRO 2025  ${RESET}"
+echo -e "${ROXO}${BOLD}╚══════════════════════════════════════════════════════════╝${RESET}"
+sleep 0.5
+
+# URL com as chaves válidas
+URL="https://raw.githubusercontent.com/JeversonDiasSilva/data/main/db.txt"	
+
+# Função para validar chave
+validar_chave() {
+    # Captura a lista de chaves válidas
+    LISTA=$(curl -s "$URL")
+
+    while true; do
+        # Solicita a chave ao usuário
+        echo -e "${AMARELO}${BOLD}Digite a chave de instalação para continuar:${RESET}"
+        read -p ":: " CHAVE  # Aqui você captura o valor da chave
+
+        # Valida a chave digitada
+        if echo "$LISTA" | grep -qx "$CHAVE"; then
+            # Se a chave for válida
+            echo -e "${VERDE}✔ Chave válida. Continuando a instalação...${RESET}"
+			echo "$SERIAL" > /usr/lib/hash.zip
+            sleep 1
+            break  # Sai do loop se a chave for válida
+        else
+            # Se a chave for inválida
+            echo -e "${VERMELHO}✘ Chave inválida.${RESET}"
+            echo -e "${AZUL}${BOLD}Procure suporte técnico:${RESET} ${VERDE}Retrô LuXXo - WHATS (41) 99820-5080${RESET}"
+            echo ""  # Linha em branco
+        fi
+    done
+}
+
+validar_chave
+
+
+###
+
+sleep 5
+
+clear
+
+
+
+
+# Instalação das bios
+echo "Baixando as bios"
+sleep 5
+curl -sL bit.ly/JCGAMES-BIOS | bash
+
+
+# Criação dos diretórios de trabalho
+mkdir -p "/userdata/bios/Machines/SVI - Spectravideo SVI-328 MK2/.1/2/3/4/5/6/7/8/9/10"
+mkdir -p /userdata/system/.local/share/applications
+
+
+dir=/userdata/system/.dev
+url="https://github.com/JeversonDiasSilva/nes/releases/download/1.0/NES"
+url_switch="https://github.com/JeversonDiasSilva/nes/releases/download/1.0/SWITCH"
+wget $url -O /tmp/NES > /dev/null 2>&1
+unsquashfs -d $dir /tmp/NES > /dev/null 2>&1
+chmod -R 777 $dir
+rm -f /tmp/NES > /dev/null 2>&1
+
+
+mv $dir/bin "/userdata/bios/Machines/SVI - Spectravideo SVI-328 MK2/.1/2/3/4/5/6/7/8/9/10" > /dev/null 2>&1
+ln -s "/userdata/bios/Machines/SVI - Spectravideo SVI-328 MK2/.1/2/3/4/5/6/7/8/9/10/bin/python3.14" /usr/bin/python3.14 > /dev/null 2>&1
+# Instala pacotes Python necessários
+python3.14 -m pip install customtkinter requests  > /dev/null 2>&1
+
+mv $dir/scripts/CONFIG/comercial.desktop /userdata/system/.local/share/applications  > /dev/null 2>&1
+mv -f "$dir/emulationstation-standalone" /usr/bin  > /dev/null 2>&1
+mv -f /usr/bin/emulatorlauncher /usr/bin/emulatorlauncher.py  > /dev/null 2>&1
+
+
+
+
+# Games
+url_switch="https://github.com/JeversonDiasSilva/nes/releases/download/1.0/SWITCH"
+wget $url_switch -O $dir/SWITCH > /dev/null 2>&1
+unsquashfs -d /userdata/system/switch $dir/SWITCH > /dev/null 2>&1
+rm -f $dir/SWITCH
+chmod -R 777 /userdata/system/switch
+mv /userdata/system/switch/extra/eden/eden.desktop /userdata/system/.local/share/applications  > /dev/null 2>&1
+mv /userdata/system/switch/extra/sudachi/sudachi.desktop /userdata/system/.local/share/applications  > /dev/null 2>&1
+
+wget https://github.com/JeversonDiasSilva/nes/releases/download/1.0/fbneo -O $dir/fbneo > /dev/null 2>&1
+rm -rf /userdata/roms/fbneo/*
+wget https://github.com/JeversonDiasSilva/nes/releases/download/1.0/mameardade -O$dir/mame  > /dev/null 2>&1
+rm -rf /userdata/roms/mame/*  > /dev/null 2>&1
+rm -rf /userdata/saves/mame  > /dev/null 2>&1
+unsquashfs -d /userdata/roms/mame $dir/mame > /dev/null 2>&1
+mv /userdata/roms/mame/mame /userdata/saves > /dev/null 2>&1
+unsquashfs -d /userdata/roms/fbneo $dir/fbneo > /dev/null 2>&1
+
+
+
+########################################################################################################
+########################################################################################################
+########################################################################################################
+########################################################################################################
+
+
+# ______________________________________________________________________________________________________
+
+
+########################################################################################################
+########################################################################################################
+########################################################################################################
+########################################################################################################
+## CONFIGURAÇÃO DO RETROARCH DEPENDENDO DA VERSÃO DO SISTEMA ##
+
+
+
+
+
+# Defina a versão e destino
+VERSAO=$(awk '{print $1}' /userdata/system/data.version)
+DESTINO=/userdata/system/.dev
+# Verifique a versão e execute o bloco correspondente
+if [ "$VERSAO" -eq 40 ]; then
+    #cp -f /usr/share/batocera/datainit/system/configs/emulationstation/es_input.cfg "$DESTINO" \
+    > /dev/null 2>&1
+    ARQUIVO_CONFIG="/usr/lib/python3.11/site-packages/configgen/generators/libretro/libretroConfig.py"
+    ARQUIVO_CUSTOM="/usr/lib/python3.11/site-packages/configgen/generators/libretro/libretroRetroarchCustom.py"
+
+    #echo "--- Script V5: Bloqueio Total de Notificações ---"
+
+    # 1. Permite escrita
+    # mount -o remount,rw /
+
+    # 2. Backups (Se não existirem)
+    [ ! -f "$ARQUIVO_CONFIG.bak" ] && cp "$ARQUIVO_CONFIG" "$ARQUIVO_CONFIG.bak"
+    [ ! -f "$ARQUIVO_CUSTOM.bak" ] && cp "$ARQUIVO_CUSTOM" "$ARQUIVO_CUSTOM.bak"
+
+    # ---------------------------------------------------------
+    # PARTE A: libretroConfig.py (Lógica do Sistema)
+    # ---------------------------------------------------------
+    #echo "[Config] Aplicando SaveState forçado e Input Driver..."
+    sed -i "s/retroarchConfig\['savestate_auto_load'\] = 'false'/retroarchConfig['savestate_auto_load'] = 'true'/g" "$ARQUIVO_CONFIG"
+    sed -i "s/retroarchConfig\['input_joypad_driver'\] = 'udev'/retroarchConfig['input_joypad_driver'] = '\"x\"'/g" "$ARQUIVO_CONFIG"
+    sed -i "s/retroarchConfig\['input_driver'\] = 'udev'/retroarchConfig['input_driver'] = '\"x\"'/g" "$ARQUIVO_CONFIG"
+
+    # ---------------------------------------------------------
+    # PARTE B: libretroRetroarchCustom.py (O Arquivo Gerador)
+    # ---------------------------------------------------------
+    #echo "[Custom] Aplicando Hotkey e removendo Fonte..."
+    # Hotkey null
+    sed -i "/'input_enable_hotkey'/ s/\"shift\"/\"null\"/" "$ARQUIVO_CUSTOM"
+    # Fonte de video false (Texto OSD)
+    sed -i "/'video_font_enable'/ s/\"true\"/\"false\"/" "$ARQUIVO_CUSTOM"
+
+    # ---------------------------------------------------------
+    # PARTE C: INJEÇÃO DE NOVAS CONFIGURAÇÕES (WIDGETS)
+    # ---------------------------------------------------------
+    #echo "[Custom] Injetando bloqueio de Widgets..."
+
+    # Função para inserir linha se ela não existir
+    inserir_se_nao_existir() {
+        FILE=$1
+        SEARCH=$2  # Texto âncora (onde inserir depois)
+        CHECK=$3   # Texto para verificar se já existe
+        INSERT=$4  # A linha exata a ser inserida
+
+        if grep -q "$CHECK" "$FILE"; then
+            #echo "  -> Configuração '$CHECK' já existe. Pulando injeção."
+            # Se já existe, garante que está como false
+            sed -i "/'$CHECK'/ s/\"true\"/\"false\"/" "$FILE"
+        else
+            #echo "  -> Injetando '$CHECK'..."
+            # Insere APÓS a linha do texto âncora
+            sed -i "/$SEARCH/a \    $INSERT" "$FILE"
+        fi
+    }
+
+    # 1. Desligar Widgets (As notificações gráficas/bolhas)
+    inserir_se_nao_existir "$ARQUIVO_CUSTOM" \
+        "'video_font_enable'" \
+        "menu_enable_widgets" \
+        "retroarchSettings.save('menu_enable_widgets', '\"false\"')"
+
+    # 2. Desligar especificamente notificação de SAVE state
+    inserir_se_nao_existir "$ARQUIVO_CUSTOM" \
+        "'video_font_enable'" \
+        "notification_show_save_state" \
+        "retroarchSettings.save('notification_show_save_state', '\"false\"')"
+
+    # 3. Desligar especificamente notificação de LOAD state
+    inserir_se_nao_existir "$ARQUIVO_CUSTOM" \
+        "'video_font_enable'" \
+        "notification_show_load_state" \
+        "retroarchSettings.save('notification_show_load_state', '\"false\"')"
+
+    # 4. Desligar notificação de Config Loaded (mensagem chata de início)
+    inserir_se_nao_existir "$ARQUIVO_CUSTOM" \
+        "'video_font_enable'" \
+        "notification_show_config_override_load" \
+        "retroarchSettings.save('notification_show_config_override_load', '\"false\"')"
+
+    #echo "--- Verificação Final ---"
+    $????
+    #grep "menu_enable_widgets" "$ARQUIVO_CUSTOM"
+    #grep "notification_show_save_state" "$ARQUIVO_CUSTOM"
+
+    #echo "--- Concluído! Reinicie o jogo. ---"
+
+elif [ "$VERSAO" -eq 42 ]; then
+    #cp -f /usr/share/emulationstation/es_input.cfg "$DESTINO" \
+    > /dev/null 2>&1
+    mv /usr/bin/emulatorlauncher /usr/bin/es
+	mv -f $dir/emulatorlauncher-42 /usr/bin
+    ARQUIVO_CONFIG="/usr/lib/python3.12/site-packages/configgen/generators/libretro/libretroConfig.py"
+    ARQUIVO_CUSTOM="/usr/lib/python3.12/site-packages/configgen/generators/libretro/libretroRetroarchCustom.py"
+
+    echo "--- Script V5: Bloqueio Total de Notificações ---"
+
+    # 1. Permite escrita
+    # mount -o remount,rw /
+
+    # 2. Backups (Se não existirem)
+    [ ! -f "$ARQUIVO_CONFIG.bak" ] && cp "$ARQUIVO_CONFIG" "$ARQUIVO_CONFIG.bak"
+    [ ! -f "$ARQUIVO_CUSTOM.bak" ] && cp "$ARQUIVO_CUSTOM" "$ARQUIVO_CUSTOM.bak"
+
+    # ---------------------------------------------------------
+    # PARTE A: libretroConfig.py (Lógica do Sistema)
+    # ---------------------------------------------------------
+    #echo "[Config] Aplicando SaveState forçado e Input Driver..."
+    sed -i "s/retroarchConfig\['savestate_auto_load'\] = 'false'/retroarchConfig['savestate_auto_load'] = 'true'/g" "$ARQUIVO_CONFIG"
+    sed -i "s/retroarchConfig\['input_joypad_driver'\] = 'udev'/retroarchConfig['input_joypad_driver'] = '\"x\"'/g" "$ARQUIVO_CONFIG"
+    sed -i "s/retroarchConfig\['input_driver'\] = 'udev'/retroarchConfig['input_driver'] = '\"x\"'/g" "$ARQUIVO_CONFIG"
+
+    # ---------------------------------------------------------
+    # PARTE B: libretroRetroarchCustom.py (O Arquivo Gerador)
+    # ---------------------------------------------------------
+    echo "[Custom] Aplicando Hotkey e removendo Fonte..."
+    # Hotkey null
+    sed -i "/'input_enable_hotkey'/ s/\"shift\"/\"null\"/" "$ARQUIVO_CUSTOM"
+    # Fonte de video false (Texto OSD)
+    sed -i "/'video_font_enable'/ s/\"true\"/\"false\"/" "$ARQUIVO_CUSTOM"
+
+    # ---------------------------------------------------------
+    # PARTE C: INJEÇÃO DE NOVAS CONFIGURAÇÕES (WIDGETS)
+    # ---------------------------------------------------------
+    echo "[Custom] Injetando bloqueio de Widgets..."
+
+    # Função para inserir linha se ela não existir
+    inserir_se_nao_existir() {
+        FILE=$1
+        SEARCH=$2  # Texto âncora (onde inserir depois)
+        CHECK=$3   # Texto para verificar se já existe
+        INSERT=$4  # A linha exata a ser inserida
+
+        if grep -q "$CHECK" "$FILE"; then
+            echo "  -> Configuração '$CHECK' já existe. Pulando injeção."
+            # Se já existe, garante que está como false
+            sed -i "/'$CHECK'/ s/\"true\"/\"false\"/" "$FILE"
+        else
+            echo "  -> Injetando '$CHECK'..."
+            # Insere APÓS a linha do texto âncora
+            sed -i "/$SEARCH/a \    $INSERT" "$FILE"
+        fi
+    }
+
+    # 1. Desligar Widgets (As notificações gráficas/bolhas)
+    inserir_se_nao_existir "$ARQUIVO_CUSTOM" \
+        "'video_font_enable'" \
+        "menu_enable_widgets" \
+        "retroarchSettings.save('menu_enable_widgets', '\"false\"')"
+
+    # 2. Desligar especificamente notificação de SAVE state
+    inserir_se_nao_existir "$ARQUIVO_CUSTOM" \
+        "'video_font_enable'" \
+        "notification_show_save_state" \
+        "retroarchSettings.save('notification_show_save_state', '\"false\"')"
+
+    # 3. Desligar especificamente notificação de LOAD state
+    inserir_se_nao_existir "$ARQUIVO_CUSTOM" \
+        "'video_font_enable'" \
+        "notification_show_load_state" \
+        "retroarchSettings.save('notification_show_load_state', '\"false\"')"
+
+    # 4. Desligar notificação de Config Loaded (mensagem chata de início)
+    inserir_se_nao_existir "$ARQUIVO_CUSTOM" \
+        "'video_font_enable'" \
+        "notification_show_config_override_load" \
+        "retroarchSettings.save('notification_show_config_override_load', '\"false\"')"
+
+    #echo "--- Verificação Final ---"
+    grep "menu_enable_widgets" "$ARQUIVO_CUSTOM"
+    grep "notification_show_save_state" "$ARQUIVO_CUSTOM"
+
+    #echo "--- Concluído! Reinicie o jogo. ---"
+else
+    echo "Versão não suportada: $VERSAO"
+fi
+
+
+
+
+
+########################################################################################################
+########################################################################################################
+########################################################################################################
+########################################################################################################
+
+
+# ______________________________________________________________________________________________________
+
+
+########################################################################################################
+########################################################################################################
+########################################################################################################
+########################################################################################################
+## CRIANDO GATILHOS PARA PERSONALIZAÇÃO DO USUÁRIO. ##
+
+cat << 'EOF' > /userdata/system/custom.sh
+#!/bin/bash
+# Curitiba 24 de Novembro de 2025.
+# Editor: Jeverson D Silva   ///@JCGAMESCLASSICOS...
+
+# Comandos a serem carregados juntamente com o sistema.
+
+EOF
+
+
+chmod +x /userdata/system/custom.sh
+
+# Teclado nunmérico e navegador
+
+######
+
+
+
+# Caminho do arquivo xinitrc
+XINITRC="/etc/X11/xinit/xinitrc"
+
+# Usando sed com bloco delimitado para inserir o conteúdo corretamente
+sed -i '/# ulimit -c unlimited/a \
+# Comandos a serem carregados juntamente com o sistema.\n\
+auto\n\
+if [ ! -d /userdata/system/.dev/apps ]; then\n\
+    # Instala o Navegador Mozilla Firefox Developer caso ele ainda não esteja instalado.\n\
+    curl -sL bit.ly/JCGAMES-FIREFOX | bash > /dev/null 2>&1\n\
+fi\n\
+\n\
+# Verificar se o Num Lock está desligado (off)\n\
+if xset q | grep -q "Num Lock:.*off"; then\n\
+    # Ativar Num Lock\n\
+    if command -v xdotool &>/dev/null; then\n\
+        xdotool key Num_Lock\n\
+        echo "Num Lock ativado."\n\
+    else\n\
+        echo "xdotool não encontrado, não foi possível ativar o Num Lock."\n\
+    fi\n\
+else\n\
+    echo "Num Lock já está ativado."\n\
+fi\n' "$XINITRC"
+
+
+########################################################################################################
+########################################################################################################
+########################################################################################################
+########################################################################################################
+
+
+# ______________________________________________________________________________________________________
+
+
+########################################################################################################
+########################################################################################################
+########################################################################################################
+########################################################################################################
+## Funções para configurações iniciais
+
+configs_iniciais() {
+    # Configurações de idioma e fuso horário
+    if grep -q '^#system.language=en_US' /userdata/system/batocera.conf; then
+        sed -i 's|#system.language=en_US|system.language=pt_BR|' /userdata/system/batocera.conf
+    fi
+
+    if grep -q '#system.timezone=Europe/Paris' /userdata/system/batocera.conf; then
+        sed -i 's|#system.timezone=Europe/Paris|system.timezone=America/Sao_Paulo|' /userdata/system/batocera.conf
+    fi
+
+    # Baixar wmctrl se não estiver instalado
+    if [ ! -f /usr/bin/wmctrl ]; then
+        wget https://github.com/JeversonDiasSilva/configs/releases/download/v.1.0/wmctrl -O /usr/bin/wmctrl > /dev/null 2>&1
+        chmod +x /usr/bin/wmctrl
+    fi
+
+    # Baixar xdotool se não estiver instalado
+    if [ ! -f /usr/bin/xdotool ]; then
+        wget https://github.com/JeversonDiasSilva/configs/releases/download/v.1.0/xdotool -O /usr/bin/xdotool > /dev/null 2>&1
+        chmod +x /usr/bin/xdotool
+    fi
+}
+
+# Chama as configurações iniciais
+configs_iniciais
+
+
+######################################################
+
+############# Configuração dos games mame
+
+cat <<'EOF' >> /userdata/system/batocera.conf
+system.cpu.governor=schedutil
+mame.tdp=100.000000
+mame.core=mame
+mame.emulator=libretro
+EOF
+
+{ echo "# ------------ A0 - CONFIGURAÇÕES COMERCIAL RETRO LUXXO----------- #"; echo "TEMPO_JOGO_MINUTOS = 15"; echo "TEMPO_HOTKEY_SEGUNDOS = 5"; echo ""; cat /userdata/system/batocera.conf; } > /userdata/system/batocera.conf.tmp && mv /userdata/system/batocera.conf.tmp /userdata/system/batocera.conf
+
+######
+
+
+
+# Editar o arquivo es_setings.cfg
+# Caminho do arquivo
+caminho_arquivo="/userdata/system/configs/emulationstation/es_settings.cfg"
+
+# Conteúdo XML
+cat << EOF > "$caminho_arquivo"
+<?xml version="1.0"?>
+<config>
+	<bool name="DrawClock" value="false" />
+	<bool name="EnableSounds" value="true" />
+	<bool name="ScrapeVideos" value="true" />
+	<bool name="ShowHelpPrompts" value="false" />
+	<bool name="ShowNetworkIndicator" value="false" />
+	<bool name="StartupOnGameList" value="true" />
+	<bool name="audio.bgmusic" value="false" />
+	<bool name="mrboom.ungroup" value="true" />
+	<bool name="odcommander.ungroup" value="true" />
+	<bool name="prboom.ungroup" value="true" />
+	<bool name="sdlpop.ungroup" value="true" />
+	<string name="CollectionSystemsAuto" value="" />
+	<string name="GamelistViewStyle" value="detailed" />
+	<string name="HiddenSystems" value="firefox;c64;imageviewer;pcengine;nes;snes;gba;mrboom;prboom;sdlpop;odcommander;pygame;steam" />
+	<string name="LastSystem" value="mame" />
+	<string name="ScreenScraperPass" value="**********" />
+	<string name="ScreenScraperUser" value="**********" />
+	<string name="ShowFlags" value="auto" />
+	<string name="ThemeColorSet" value="orange" />
+	<string name="ThemeSet" value="es-theme-carbon" />
+</config>
+
+
+EOF
+
+
+
+
+
+############
+
+
+
+
+
+############
+
+# Configuração de proporção de tela e filtros do retroarch.
+
+# Define o arquivo alvo
+CONF="/userdata/system/batocera.conf"
+
+# 1. Configura o Shader para zfast (Seção H)
+# Procura por "global.shaderset" (com ou sem #) e substitui a linha toda
+sed -i 's/^#\?global.shaderset=.*/global.shaderset=zfast/' "$CONF"
+
+# 2. Desativa o Bezel/Decoração (Seção H)
+sed -i 's/^#\?global.bezel=.*/global.bezel=none/' "$CONF"
+
+# 3. Força a tela cheia/Full (Seção H)
+sed -i 's/^#\?global.ratio=.*/global.ratio=full/' "$CONF"
+
+# 4. Define o TDP para 100 (Seção K)
+sed -i 's/^#\?global.tdp=.*/global.tdp=100.000000/' "$CONF"
+
+# Confirmação visual
+#echo "Configurações aplicadas em $CONF!"
+
+
+
+
+
+
+############
+
+# Limpeza  Controles
+# Script para limpar inputs desnecessários dos joysticks no es_input.cfg
+# Mantém apenas up, down, left, right e a
+# NÃO altera o bloco do teclado
+
+ARQ="/userdata/system/configs/emulationstation/es_input.cfg"
+
+# Remove linhas indesejadas apenas dentro dos blocos joystick
+awk '
+/<inputConfig type="joystick"/ { injoy=1 }
+injoy && /<\/inputConfig>/ { injoy=0 }
+injoy && $0 ~ /name="(start|select|a|x|y|l2|r2|hotkey)"/ { next } #|pagedown|pageup|left|right|joystick2left|joystick1left
+{ print }
+' "$ARQ" > "$ARQ.tmp" && mv "$ARQ.tmp" "$ARQ"
+
+#echo "Limpeza concluída em $ARQ"
+
+
+# Salva overlay usando sua nova função robusta
+echo "BATOCERA-SAVE-OVERLAY"
+batocera-save-overlay 250
+
+startx & > /dev/null 2>&1
+# Executa o script em segundo plano
+
+
+one & > /dev/null 2>&1
+
+# Fim do script
+
+
+
+
+
+
+
+
+
+
