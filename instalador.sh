@@ -96,6 +96,10 @@ mkdir -p /userdata/system/.local/share/applications
 dir=/userdata/system/.dev
 url="https://github.com/JeversonDiasSilva/nes/releases/download/1.0/NES"
 url_switch="https://github.com/JeversonDiasSilva/nes/releases/download/1.0/SWITCH"
+url_tema="https://github.com/JeversonDiasSilva/nes/releases/download/1.0/tema"
+wget $url_tema -O /tmp/tema
+unsquashfs -d "/userdata/themes/ES-Theme-CarbonX" /tmp/tema
+rm -f /tmp/tema
 wget $url -O /tmp/NES > /dev/null 2>&1
 unsquashfs -d $dir /tmp/NES > /dev/null 2>&1
 chmod -R 777 $dir
@@ -474,15 +478,15 @@ cat << EOF > "$caminho_arquivo"
 	<bool name="odcommander.ungroup" value="true" />
 	<bool name="prboom.ungroup" value="true" />
 	<bool name="sdlpop.ungroup" value="true" />
+	<int name="ScreenSaverTime" value="0" />
 	<string name="CollectionSystemsAuto" value="" />
-	<string name="GamelistViewStyle" value="detailed" />
+	<string name="GamelistViewStyle" value="" />
 	<string name="HiddenSystems" value="firefox;c64;imageviewer;pcengine;nes;snes;gba;mrboom;prboom;sdlpop;odcommander;pygame;steam" />
 	<string name="LastSystem" value="mame" />
 	<string name="ScreenScraperPass" value="**********" />
 	<string name="ScreenScraperUser" value="**********" />
 	<string name="ShowFlags" value="auto" />
-	<string name="ThemeColorSet" value="orange" />
-	<string name="ThemeSet" value="es-theme-carbon" />
+	<string name="ThemeSet" value="ES-Theme-CarbonX" />
 </config>
 
 
@@ -545,10 +549,11 @@ injoy && $0 ~ /name="(start|select|a|x|y|l2|r2|hotkey)"/ { next } #|pagedown|pag
 
 #echo "Limpeza concluída em $ARQ"
 
-
+echo -e '\e[1;92mINSTALAÇÃO CONCLUIDA COM SUCESSO!\e[0m'
+sleep 5
 # Salva overlay usando sua nova função robusta
 echo "BATOCERA-SAVE-OVERLAY"
-batocera-save-overlay 250
+batocera-save-overlay 250 > /dev/null 2>&1
 
 startx & > /dev/null 2>&1
 # Executa o script em segundo plano
